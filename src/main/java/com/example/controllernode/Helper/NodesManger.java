@@ -16,8 +16,8 @@ public class NodesManger {
     }
 
     public static synchronized List<String> getNodes() {
-        var node= nodes.get(nodeSelector);
-        nodeSelector= (nodeSelector+1)% nodes.size();
+        /*var node= nodes.get(nodeSelector);
+        nodeSelector= (nodeSelector+1)% nodes.size();*/
         return nodes;
     }
 
