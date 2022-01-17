@@ -2,4 +2,4 @@ From openjdk:latest
 
 copy ./target /
 
-CMD ["java","-jar","./ControllerNode-1.0-SANPSHOT.jar"]
+CMD ["java","-jar","./ControllerNodeApplication-1.0-SANPSHOT.jar"]
