@@ -28,7 +28,7 @@ jobs:
       run: |
         cd target
         ls -al
-        java -jar ControllerNode-1.0-SANPSHOT.jar
+        java -jar ControllerNodeApplication-1.0-SANPSHOT.jar
     - name: Build and push docker image
       uses: mr-smithers-excellent/docker-build-push@v5
       with:
