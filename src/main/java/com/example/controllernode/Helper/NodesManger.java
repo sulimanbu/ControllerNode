@@ -15,10 +15,10 @@ public class NodesManger {
         throw new AssertionError();
     }
 
-    public static synchronized String getNodes() {
+    public static synchronized List<String> getNodes() {
         var node= nodes.get(nodeSelector);
         nodeSelector= (nodeSelector+1)% nodes.size();
-        return node;
+        return nodes;
     }
 
     public static void addNode(String node){
