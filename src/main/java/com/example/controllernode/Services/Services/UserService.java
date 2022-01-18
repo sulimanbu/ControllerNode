@@ -51,7 +51,7 @@ public class UserService implements IUserService {
     public synchronized ResponseModel<User> validateUser(String username, String password){
         try {
             var filePath=Path.of(MessageFormat.format("NoSqlDB/Users/{0}.json", username));
-            String Result = FileManger.readFile(filePath.toString());
+            String Result = Files.readString(filePath);
 
             User user = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).readValue(Result, User.class);
             if(user.getPassword().equals(password)){
@@ -71,7 +71,7 @@ public class UserService implements IUserService {
     public synchronized ResponseModel<Boolean> updatePassword(String password) {
         try {
             var filePath=Path.of(MessageFormat.format("NoSqlDB/Users/{0}.json", CurrentUser.getUser().getUsername()));
-            String Result =FileManger.readFile(filePath.toString());
+            String Result =Files.readString(filePath);
 
             var user=new JSONObject(Result);
             user.put("password", password);
