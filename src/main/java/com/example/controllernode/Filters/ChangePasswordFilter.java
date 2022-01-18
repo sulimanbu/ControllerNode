@@ -2,6 +2,7 @@ package com.example.controllernode.Filters;
 
 import com.example.controllernode.Helper.CurrentUser;
 import com.example.controllernode.Model.ResponseModel;
+import com.example.controllernode.Services.Helper.FileManger;
 import org.json.JSONObject;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -22,7 +23,8 @@ public class ChangePasswordFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws ServletException, IOException {
 
         try {
-            String Result = Files.readString(Path.of(MessageFormat.format("NoSqlDB/Users/{0}.json", CurrentUser.getUser().getUsername())));
+            var filePath=MessageFormat.format("NoSqlDB/Users/{0}.json", CurrentUser.getUser().getUsername());
+            String Result = FileManger.readFile(filePath);
             var user=new JSONObject(Result);
 
             if(user.has("isDefault") && user.get("isDefault").equals(true)){

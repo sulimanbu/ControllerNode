@@ -2,6 +2,7 @@ package com.example.controllernode.Repository.Repositories;
 
 import com.example.controllernode.Model.ResponseModel;
 import com.example.controllernode.Repository.IRepositories.IIndexRepository;
+import com.example.controllernode.Services.Helper.FileManger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -12,10 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Service
@@ -23,12 +21,11 @@ public class IndexRepository implements IIndexRepository {
 
     @Override
     public void setIndexValues(String folderPath, String property) throws IOException {
-        var rootPath= MessageFormat.format("{0}", folderPath);
-        Stream<Path> paths = Files.walk(Paths.get(rootPath),1).filter(Files::isRegularFile);
+        Stream<Path> paths = Files.walk(Paths.get(folderPath),1).filter(Files::isRegularFile);
 
         Map<String, ArrayList<Integer>> index=new HashMap<>();
         for(var path: paths.toList()) {
-            var fileContent = new JSONObject(Files.readString(path));
+            var fileContent = new JSONObject(FileManger.readFile(path.toString()));
 
             if (fileContent.has(property)) {
                 var list = index.getOrDefault(fileContent.get(property).toString(), new ArrayList<>());
@@ -37,11 +34,15 @@ public class IndexRepository implements IIndexRepository {
             }
         }
         String json = new ObjectMapper().writeValueAsString(index);
-        Files.writeString(Path.of(rootPath+"/index/"+ property+ ".json"),json);
+
+        FileManger.writeFile(folderPath+"/index/"+ property+ ".json",json);
+        FileManger.removeFromOldVersion(new ArrayList<String>(Collections.singleton(folderPath + "/index/" + property + ".json")));
     }
 
     @Override
-    public void addToIndex(String folderPath, String Document) throws IOException {
+    public List<String> addToIndex(String folderPath, String Document) throws IOException {
+        List<String> oldVersionPaths=new ArrayList<>();
+
         if(Files.exists(Path.of(folderPath + "/index"))){
             var documentContent = new JSONObject(Document);
 
@@ -50,7 +51,7 @@ public class IndexRepository implements IIndexRepository {
                 var property=keys.next();
                 var filePath=Path.of(folderPath + "/index/" + property + ".json" );
                 if(Files.exists(filePath)){
-                    var fileContent=new JSONObject(Files.readString(filePath));
+                    var fileContent=new JSONObject(FileManger.readFile(filePath.toString()));
                     List array=new ArrayList<Object>();
                     if(fileContent.has(documentContent.get(property).toString())){
                         array=((JSONArray)fileContent.get(documentContent.get(property).toString())).toList();
@@ -58,14 +59,19 @@ public class IndexRepository implements IIndexRepository {
 
                     array.add((Integer) documentContent.get("_id"));
                     fileContent.put(documentContent.get(property).toString(),array);
-                    Files.writeString(filePath,fileContent.toString());
+
+                    oldVersionPaths.add(folderPath.toString());
+                    FileManger.writeFile(filePath.toString(),fileContent.toString());
                 }
             }
         }
+        return oldVersionPaths;
     }
 
     @Override
-    public void deleteFromIndex(String folderPath, String Document) throws IOException {
+    public List<String> deleteFromIndex(String folderPath, String Document) throws IOException {
+        List<String> oldVersionPaths=new ArrayList<>();
+
         if(Files.exists(Path.of(folderPath + "/index"))){
             var documentContent = new JSONObject(Document);
             var keys=documentContent.keys();
@@ -73,7 +79,7 @@ public class IndexRepository implements IIndexRepository {
                 var property=keys.next();
                 var filePath=Path.of(folderPath + "/index/" + property + ".json" );
                 if(Files.exists(filePath)){
-                    var fileContent=new JSONObject(Files.readString(filePath));
+                    var fileContent=new JSONObject(FileManger.readFile(filePath.toString()));
                     if(fileContent.has(documentContent.get(property).toString())){
                         var array=(JSONArray)fileContent.get(documentContent.get(property).toString());
                         var array1=array.toList();
@@ -83,11 +89,14 @@ public class IndexRepository implements IIndexRepository {
                         }else {
                             fileContent.put(documentContent.get(property).toString(),array1);
                         }
-                        Files.writeString(filePath,fileContent.toString());
+
+                        oldVersionPaths.add(filePath.toString());
+                        FileManger.writeFile(filePath.toString(),fileContent.toString());
                     }
                 }
             }
         }
+        return oldVersionPaths;
     }
 
     @Override
@@ -105,7 +114,7 @@ public class IndexRepository implements IIndexRepository {
                 var property=keys.next();
                 var filePath=Path.of(folderPath + "/index/" + property + ".json" );
                 if(Files.exists(filePath)){
-                    var fileContent=new JSONObject(Files.readString(filePath));
+                    var fileContent=new JSONObject(FileManger.readFile(filePath.toString()));
 
                     var propertyValue=filterContent.get(property).toString();
                     if(fileContent.has(propertyValue)){

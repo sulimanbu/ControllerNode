@@ -1,6 +1,7 @@
 package com.example.controllernode.Services.Services;
 
 import com.example.controllernode.Model.ResponseModel;
+import com.example.controllernode.Services.Helper.FileManger;
 import com.example.controllernode.Services.IServices.IUserService;
 import com.example.controllernode.Model.User;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -50,7 +51,7 @@ public class UserService implements IUserService {
     public synchronized ResponseModel<User> validateUser(String username, String password){
         try {
             var filePath=Path.of(MessageFormat.format("NoSqlDB/Users/{0}.json", username));
-            String Result = Files.readString(filePath);
+            String Result = FileManger.readFile(filePath.toString());
 
             User user = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).readValue(Result, User.class);
             if(user.getPassword().equals(password)){
@@ -70,7 +71,7 @@ public class UserService implements IUserService {
     public synchronized ResponseModel<Boolean> updatePassword(String password) {
         try {
             var filePath=Path.of(MessageFormat.format("NoSqlDB/Users/{0}.json", CurrentUser.getUser().getUsername()));
-            String Result = Files.readString(filePath);
+            String Result =FileManger.readFile(filePath.toString());
 
             var user=new JSONObject(Result);
             user.put("password", password);

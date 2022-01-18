@@ -2,6 +2,7 @@ package com.example.controllernode.Services.Services;
 
 import com.example.controllernode.Model.ResponseModel;
 import com.example.controllernode.Repository.IRepositories.IIndexRepository;
+import com.example.controllernode.Services.Helper.FileManger;
 import com.example.controllernode.Services.Helper.Helper;
 import com.example.controllernode.Services.IServices.IReaderService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -28,7 +29,8 @@ public class ReaderService implements IReaderService {
     @Override
     public ResponseModel<String> GetById(String dataBase,String type,int id) {
         try {
-            String Result = Files.readString(Path.of(MessageFormat.format("NoSqlDB/DB/{0}/{1}/{2}.json", dataBase,type,id)));
+            var filePath=MessageFormat.format("NoSqlDB/DB/{0}/{1}/{2}.json", dataBase,type,id);
+            String Result = FileManger.readFile(filePath);
 
             return new ResponseModel.Builder<String>(true).Result(Result).build();
         } catch (NoSuchFileException ex){
@@ -49,15 +51,16 @@ public class ReaderService implements IReaderService {
         if(indexResult.isSuccess()){
             for(var id: indexResult.getResult()){
 
-                var fileResult=Path.of(MessageFormat.format("{0}/{1}.json", folderPath,id));
-                String Result = Files.readString(fileResult);
+                var filePath=MessageFormat.format("{0}/{1}.json", folderPath,id);
+                String Result = FileManger.readFile(filePath);
+
                 list.add(Result);
             }
         }else if(indexResult.getResult() != null) {
             for(var id: indexResult.getResult()){
 
-                var fileResult=Path.of(MessageFormat.format("{0}/{1}.json", folderPath,id));
-                String Result = Files.readString(fileResult);
+                var filePath=MessageFormat.format("{0}/{1}.json", folderPath,id);
+                String Result = FileManger.readFile(filePath);
                 if(Helper.isMatch(Result,filter)){
                     list.add(Result);
                 }
@@ -66,7 +69,7 @@ public class ReaderService implements IReaderService {
             Stream<Path> paths = Files.walk(Paths.get(folderPath),1).filter(Files::isRegularFile);
 
             for(var path: paths.toList()){
-                String Result = Files.readString(path);
+                String Result = FileManger.readFile(path.toString());
 
                 if(Helper.isMatch(Result,filter)){
                     list.add(Result);
@@ -88,7 +91,7 @@ public class ReaderService implements IReaderService {
 
             List<String> list=new ArrayList<>();
             for(var path: paths.toList()){
-                String Result = Files.readString(path);
+                String Result = FileManger.readFile(path.toString());
                 list.add(Result);
             }
 
