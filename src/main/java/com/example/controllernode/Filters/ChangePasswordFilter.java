@@ -46,7 +46,7 @@ public class ChangePasswordFilter implements Filter {
 
         registrationBean.setFilter(new ChangePasswordFilter());
         registrationBean.addUrlPatterns("/api/Reader/*","/api/Writer/*","/api/User/addUser","/api/Schema/*");
-        registrationBean.setOrder(3);
+        registrationBean.setOrder(2);
 
         return registrationBean;
     }

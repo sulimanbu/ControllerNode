@@ -93,7 +93,10 @@ public class ReaderService implements IReaderService {
             }
 
             return new ResponseModel.Builder<List<String>>(true).Result(list).build();
-        }catch (Exception ex){
+        }catch (NoSuchFileException ex){
+            return new ResponseModel.Builder<List<String>>(false).message("Database Not Found").build();
+        }
+        catch (Exception ex){
             return new ResponseModel.Builder<List<String>>(false).message("error happened").build();
         }
     }
