@@ -62,7 +62,7 @@ public class SchemaController {
             Map<String,String> map=new HashMap<>();
             String nodeUrl= NodesManger.getNode();
             map.put("Token", JWT.createJWTWithDatabase(dataBase,nodeUrl));
-            map.put("NodeBaseUrl", NodesManger.getNode());
+            map.put("NodeBaseUrl", nodeUrl);
             return new ResponseModel.Builder<Map<String,String>>(true).Result(map).build();
         }
 
