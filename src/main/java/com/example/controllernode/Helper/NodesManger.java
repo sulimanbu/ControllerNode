@@ -3,29 +3,32 @@ package com.example.controllernode.Helper;
 import com.mashape.unirest.http.exceptions.UnirestException;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class NodesManger {
     static int nodeSelector =0;
-    static List<String> nodes = Collections.synchronizedList(new ArrayList<>());
+    static Set<String> nodes = Collections.synchronizedSet(new HashSet<>());
+    static Set<String> nodesUrl = Collections.synchronizedSet(new HashSet<>());
 
     public NodesManger(){
         throw new AssertionError();
     }
 
-    public static synchronized List<String> getNodes() {
+    public static synchronized Set<String> getNodes() {
         /*var node= nodes.get(nodeSelector);
         nodeSelector= (nodeSelector+1)% nodes.size();*/
-        return nodes;
+        return nodesUrl;
     }
 
-    public static void addNode(String node){
+    public static synchronized void addNode(String node){
         nodes.add(node);
     }
 
-    public static synchronized void sendRequest(String url,String body) throws UnsupportedEncodingException, UnirestException {
+    public static synchronized void addNodeUrl(String node){
+        nodesUrl.add(node);
+    }
+
+    public static void sendRequest(String url,String body) throws UnsupportedEncodingException, UnirestException {
         for (var node:nodes){
             ApiCall.post(node+url,body);
         }

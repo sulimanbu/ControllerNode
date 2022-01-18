@@ -7,6 +7,7 @@ import com.example.controllernode.Model.LogInModel;
 import com.example.controllernode.Model.ResponseModel;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.UnsupportedEncodingException;
 
@@ -17,6 +18,14 @@ public class NodeController {
     @PostMapping( "/addNode")
     public ResponseModel addNode(@RequestParam String node) throws UnsupportedEncodingException, UnirestException {
         NodesManger.addNode(node);
+
+        return new ResponseModel.Builder<Boolean>(true).Result(true).build();
+    }
+
+    @PostMapping( "/addNodeUrl")
+    public ResponseModel addNodeUrl(@RequestParam String node) throws UnsupportedEncodingException, UnirestException {
+        NodesManger.addNodeUrl(ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString());
+        NodesManger.addNodeUrl(node);
 
         return new ResponseModel.Builder<Boolean>(true).Result(true).build();
     }

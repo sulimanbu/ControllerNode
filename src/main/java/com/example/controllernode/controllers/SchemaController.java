@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.text.MessageFormat;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/Schema")
@@ -53,8 +54,8 @@ public class SchemaController {
     }
 
     @GetMapping("/Connection")
-    ResponseModel<List<String>> Connection(@RequestParam String dataBase){
-        return new ResponseModel.Builder<List<String>>(true).Result(NodesManger.getNodes()).build();
+    ResponseModel<Set<String>> Connection(@RequestParam String dataBase){
+        return new ResponseModel.Builder<Set<String>>(true).Result(NodesManger.getNodes()).build();
        /* var result= schemaService.exportSchema(dataBase);
 
         return result;*/
