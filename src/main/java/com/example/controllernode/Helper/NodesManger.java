@@ -8,16 +8,18 @@ import java.util.*;
 public class NodesManger {
     static int nodeSelector =0;
     static Set<String> nodes = Collections.synchronizedSet(new HashSet<>());
-    static Set<String> nodesUrl = Collections.synchronizedSet(new HashSet<>());
+    static Set<String> nodesUrl = Collections.synchronizedSet(new HashSet<String>());
 
     public NodesManger(){
         throw new AssertionError();
     }
 
-    public static synchronized Set<String> getNodes() {
-        /*var node= nodes.get(nodeSelector);
-        nodeSelector= (nodeSelector+1)% nodes.size();*/
-        return nodesUrl;
+    public static synchronized String getNode() {
+        nodesUrl.add("http://localhost:8080");
+
+        var node=(String) nodesUrl.toArray()[nodeSelector];
+        nodeSelector= (nodeSelector+1)% nodesUrl.size();
+        return node;
     }
 
     public static synchronized void addNode(String node){

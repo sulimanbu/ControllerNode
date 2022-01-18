@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.*;
-import javax.servlet.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -46,8 +45,8 @@ public class ChangePasswordFilter implements Filter {
                 = new FilterRegistrationBean<>();
 
         registrationBean.setFilter(new ChangePasswordFilter());
-        registrationBean.addUrlPatterns("/api/Reader/*","/api/Writer/*","/api/User/addUser");
-        registrationBean.setOrder(2);
+        registrationBean.addUrlPatterns("/api/Reader/*","/api/Writer/*","/api/User/addUser","/api/Schema/*");
+        registrationBean.setOrder(3);
 
         return registrationBean;
     }

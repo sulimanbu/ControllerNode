@@ -141,4 +141,9 @@ public class SchemaService implements ISchemaService {
 
         return indexes;
     }
+
+    public boolean checkDatabaseExist(String dataBase){
+        var folderPath=MessageFormat.format("NoSqlDB/DB/{0}", dataBase);
+        return Files.exists(Path.of(folderPath));
+    }
 }

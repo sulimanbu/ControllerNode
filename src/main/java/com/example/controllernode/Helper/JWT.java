@@ -8,6 +8,7 @@ import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
@@ -41,6 +42,28 @@ public class JWT {
         return builder.compact();
     }
 
+    public static String createJWTWithDatabase(String database,String nodeUrl) {
+
+        SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
+
+        long nowMillis = System.currentTimeMillis();
+        Date now = new Date(nowMillis);
+
+        byte[] apiKeySecretBytes = DatatypeConverter.parseBase64Binary(SECRET_KEY);
+        Key signingKey = new SecretKeySpec(apiKeySecretBytes, signatureAlgorithm.getJcaName());
+
+        JwtBuilder builder = Jwts.builder()
+                .setIssuedAt(now)
+                .signWith(signatureAlgorithm, signingKey)
+                .claim("username",CurrentUser.getUser().getUsername())
+                .claim("role",CurrentUser.getUser().getRole())
+                .claim("database",database)
+                .claim("baseUrl",nodeUrl);
+
+
+        return builder.compact();
+    }
+
     public static String createJWTForNode() {
 
         SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
@@ -69,9 +92,19 @@ public class JWT {
                 return;
             }
 
+            var database = (String) claims.get("database");
+            var baseUrl = (String) claims.get("baseUrl");
+
+            var currentBaseUrl= ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+            if(database != null && baseUrl != null && baseUrl.equals(currentBaseUrl)){
+                CurrentUser.setDatabase(database);
+            } else
+                CurrentUser.setDatabase("");
+
             CurrentUser.setUser(new User(username,"", Role.valueOf(role)));
         }catch (Exception ex){
             CurrentUser.setUser(null);
+            CurrentUser.setDatabase("");
         }
     }
     public static boolean validateNodeJWT(String token){

@@ -24,7 +24,7 @@ public class LogInFilter implements javax.servlet.Filter {
                 = new FilterRegistrationBean<>();
 
         registrationBean.setFilter(new LogInFilter());
-        registrationBean.addUrlPatterns("/api/Reader/*","/api/Writer/*","/api/User/*");
+        registrationBean.addUrlPatterns("/api/Reader/*","/api/Writer/*","/api/User/*","/api/Schema/*");
         registrationBean.setOrder(1);
 
         return registrationBean;

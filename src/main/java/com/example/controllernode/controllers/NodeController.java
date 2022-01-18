@@ -16,15 +16,14 @@ import java.io.UnsupportedEncodingException;
 public class NodeController {
 
     @PostMapping( "/addNode")
-    public ResponseModel addNode(@RequestParam String node) throws UnsupportedEncodingException, UnirestException {
+    public ResponseModel addNode(@RequestParam String node)  {
         NodesManger.addNode(node);
 
         return new ResponseModel.Builder<Boolean>(true).Result(true).build();
     }
 
     @PostMapping( "/addNodeUrl")
-    public ResponseModel addNodeUrl(@RequestParam String node) throws UnsupportedEncodingException, UnirestException {
-        NodesManger.addNodeUrl(ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString());
+    public ResponseModel addNodeUrl(@RequestParam String node) {
         NodesManger.addNodeUrl(node);
 
         return new ResponseModel.Builder<Boolean>(true).Result(true).build();

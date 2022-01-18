@@ -1,5 +1,6 @@
 package com.example.controllernode.controllers;
 
+import com.example.controllernode.Helper.JWT;
 import com.example.controllernode.Helper.NodesManger;
 import com.example.controllernode.Model.DataBaseSchema;
 import com.example.controllernode.Model.ResponseModel;
@@ -7,7 +8,9 @@ import com.example.controllernode.Services.IServices.ISchemaService;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @RestController
@@ -54,10 +57,15 @@ public class SchemaController {
     }
 
     @GetMapping("/Connection")
-    ResponseModel<Set<String>> Connection(@RequestParam String dataBase){
-        return new ResponseModel.Builder<Set<String>>(true).Result(NodesManger.getNodes()).build();
-       /* var result= schemaService.exportSchema(dataBase);
+    ResponseModel<Map<String,String>> Connection(@RequestParam String dataBase){
+        if(schemaService.checkDatabaseExist(dataBase)){
+            Map<String,String> map=new HashMap<>();
+            String nodeUrl= NodesManger.getNode();
+            map.put("Token", JWT.createJWTWithDatabase(dataBase,nodeUrl));
+            map.put("NodeBaseUrl", NodesManger.getNode());
+            return new ResponseModel.Builder<Map<String,String>>(true).Result(map).build();
+        }
 
-        return result;*/
+        return new ResponseModel.Builder<Map<String,String>>(false).message("Database Not Found").build();
     }
 }
