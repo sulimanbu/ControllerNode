@@ -12,6 +12,7 @@ public class FileManger {
         throw new AssertionError();
     }
 
+    final static int maxSize=1000;
     private static final ConcurrentHashMap<String, String> FilesCache = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, String> FilesOldVersion= new ConcurrentHashMap<>();
 
@@ -33,6 +34,7 @@ public class FileManger {
 
         var fileContent=Files.readString(Path.of(absolutePath));
         FilesCache.put(absolutePath,fileContent);
+        resize();
         return  fileContent;
     }
     public synchronized static void writeFile(String path,String content) throws IOException {
@@ -61,6 +63,19 @@ public class FileManger {
     public synchronized static void removeFromOldVersion(List<String> paths){
         for (var path:paths){
             FilesOldVersion.remove(Path.of(path).toAbsolutePath().toString());
+        }
+    }
+
+    private synchronized static void resize(){
+        if(FilesCache.size() >= maxSize){
+            int i=0;
+            var keys=FilesCache.keys().asIterator();
+           while(keys.hasNext()){
+               if(i<100){
+                   FilesCache.remove(keys.next());
+                   i++;
+               }
+           }
         }
     }
 }
