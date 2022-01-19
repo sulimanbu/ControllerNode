@@ -1,6 +1,7 @@
 package com.example.controllernode;
 
 import com.example.controllernode.Model.Role;
+import com.example.controllernode.Services.Helper.IdGenerator;
 import com.example.controllernode.Services.IServices.IUserService;
 import com.example.controllernode.Services.Services.UserService;
 import org.springframework.boot.SpringApplication;
@@ -13,6 +14,7 @@ public class ControllerNodeApplication {
         final IUserService userService=new UserService();
 
         userService.addFirstUser();
+        IdGenerator.getOldIds();
         SpringApplication.run(ControllerNodeApplication.class, args);
     }
 

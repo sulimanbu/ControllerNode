@@ -24,7 +24,7 @@ public class ChangePasswordFilter implements Filter {
 
         try {
             var filePath=MessageFormat.format("NoSqlDB/Users/{0}.json", CurrentUser.getUser().getUsername());
-            String Result = FileManger.readFile(filePath);
+            String Result = Files.readString(Path.of(filePath));
             var user=new JSONObject(Result);
 
             if(user.has("isDefault") && user.get("isDefault").equals(true)){

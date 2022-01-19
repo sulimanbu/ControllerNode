@@ -60,7 +60,7 @@ public class IndexRepository implements IIndexRepository {
                     array.add((Integer) documentContent.get("_id"));
                     fileContent.put(documentContent.get(property).toString(),array);
 
-                    oldVersionPaths.add(folderPath.toString());
+                    oldVersionPaths.add(filePath.toString());
                     FileManger.writeFile(filePath.toString(),fileContent.toString());
                 }
             }

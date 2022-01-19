@@ -2,6 +2,7 @@ package com.example.controllernode.Services.Helper;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,6 +20,9 @@ public class FileManger {
 
         var valueFromOldVersion = FilesOldVersion.getOrDefault(absolutePath,null);
         if(valueFromOldVersion != null){
+            if(valueFromOldVersion == ""){
+                throw new NoSuchFileException(absolutePath);
+            }
             return valueFromOldVersion;
         }
 
@@ -26,6 +30,7 @@ public class FileManger {
         if(value != null){
             return value;
         }
+
         var fileContent=Files.readString(Path.of(absolutePath));
         FilesCache.put(absolutePath,fileContent);
         return  fileContent;
@@ -34,20 +39,23 @@ public class FileManger {
         var absolutePath=Path.of(path).toAbsolutePath().toString();
 
         addToOldVersion(path);
-        deleteFromCache(absolutePath);
+        //deleteFromCache(absolutePath);
 
         Files.writeString(Path.of(absolutePath),content);
     }
 
     public synchronized static void deleteFromCache(String absolutePath){
-        if(FilesCache.containsKey(absolutePath)){
-            FilesCache.remove(absolutePath);
-        }
+        FilesCache.remove(absolutePath);
     }
 
     public synchronized static void addToOldVersion(String path) throws IOException {
-        FilesOldVersion.put(Path.of(path).toAbsolutePath().toString(),readFile(path));
+        try{
+            FilesOldVersion.put(Path.of(path).toAbsolutePath().toString(),readFile(path));
+        }catch (NoSuchFileException ex){
+            FilesOldVersion.put(Path.of(path).toAbsolutePath().toString(),"");
+        }
         deleteFromCache(path);
+
     }
 
     public synchronized static void removeFromOldVersion(List<String> paths){

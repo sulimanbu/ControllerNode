@@ -40,6 +40,15 @@ public class SchemaController {
         return result;
     }
 
+    @PostMapping("/Schema/createIndex")
+    ResponseModel<Boolean> createIndex(@RequestParam String dataBase,@RequestParam String type,@RequestParam String property){
+        var result= schemaService.createIndex(dataBase, type, property);
+        if (result.isSuccess()){
+            NodesManger.updateNode(MessageFormat.format("/Schema/createIndex?dataBase={0}&type={1}&property={2}", dataBase,type,property),"");
+        }
+        return result;
+    }
+
     @PostMapping("/importSchema")
     ResponseModel<Boolean> importSchema(@RequestBody DataBaseSchema schema){
         var result= schemaService.importSchema(schema);

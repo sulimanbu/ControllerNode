@@ -97,7 +97,7 @@ public class ReaderService implements IReaderService {
 
             return new ResponseModel.Builder<List<String>>(true).Result(list).build();
         }catch (NoSuchFileException ex){
-            return new ResponseModel.Builder<List<String>>(false).message("Database Not Found").build();
+            return new ResponseModel.Builder<List<String>>(false).message("Database Or Type Not Found").build();
         }
         catch (Exception ex){
             return new ResponseModel.Builder<List<String>>(false).message("error happened").build();
