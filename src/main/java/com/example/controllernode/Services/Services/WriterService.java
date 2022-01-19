@@ -6,6 +6,7 @@ import com.example.controllernode.Services.Helper.FileManger;
 import com.example.controllernode.Services.Helper.Helper;
 import com.example.controllernode.Services.Helper.IdGenerator;
 import com.example.controllernode.Services.IServices.IWriterService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
@@ -82,19 +83,46 @@ public class WriterService implements IWriterService {
     @Override
     public synchronized ResponseModel<Boolean> deleteDocument(String dataBase, String type,String filter) {
         var folderPath=MessageFormat.format("NoSqlDB/DB/{0}/{1}", dataBase,type);
-        try(Stream<Path> paths = Files.walk(Path.of(folderPath)).filter(Files::isRegularFile)) {
-            List<String> oldVersionPath= new ArrayList<>();
+        try {
+            var indexResult = indexRepository.tryGetUsingIndex(folderPath, filter);
+            List<String> oldVersionPath = new ArrayList<>();
 
-            for(var path: paths.toList()){
-                String result = FileManger.readFile(path.toString());
+            if (indexResult.isSuccess()) {
+                for (var id : indexResult.getResult()) {
+                    var filePath = MessageFormat.format("{0}/{1}.json", folderPath, id);
+                    String Result = FileManger.readFile(filePath);
 
-                if(Helper.isMatch(result,filter)){
-                    FileManger.addToOldVersion(path.toString());
-                    oldVersionPath.add(path.toString());
-                    Files.deleteIfExists(path);
-                    oldVersionPath.addAll(indexRepository.deleteFromIndex(folderPath,result));
+                    FileManger.addToOldVersion(filePath);
+                    oldVersionPath.add(filePath);
+                    Files.deleteIfExists(Path.of(filePath));
+                    oldVersionPath.addAll(indexRepository.deleteFromIndex(folderPath, Result));
+                }
+            } else if (indexResult.getResult() != null) {
+                for (var id : indexResult.getResult()) {
+                    var filePath = MessageFormat.format("{0}/{1}.json", folderPath, id);
+                    String Result = FileManger.readFile(filePath);
+
+                    if (Helper.isMatch(Result, filter)) {
+                        FileManger.addToOldVersion(filePath);
+                        oldVersionPath.add(filePath);
+                        Files.deleteIfExists(Path.of(filePath));
+                        oldVersionPath.addAll(indexRepository.deleteFromIndex(folderPath, Result));
+                    }
+                }
+            } else {
+                Stream<Path> paths = Files.walk(Path.of(folderPath),1).filter(Files::isRegularFile);
+                for (var path : paths.toList()) {
+                    String result = FileManger.readFile(path.toString());
+
+                    if (Helper.isMatch(result, filter)) {
+                        FileManger.addToOldVersion(path.toString());
+                        oldVersionPath.add(path.toString());
+                        Files.deleteIfExists(path);
+                        oldVersionPath.addAll(indexRepository.deleteFromIndex(folderPath, result));
+                    }
                 }
             }
+
 
             FileManger.removeFromOldVersion(oldVersionPath);
             return new ResponseModel.Builder<Boolean>(true).Result(true).build();
@@ -130,23 +158,52 @@ public class WriterService implements IWriterService {
     @Override
     public synchronized ResponseModel<Boolean> updateDocument(String dataBase, String type,String filter,String newDocument) {
         var folderPath=MessageFormat.format("NoSqlDB/DB/{0}/{1}", dataBase,type);
-        try(Stream<Path> paths = Files.walk(Paths.get(folderPath)).filter(Files::isRegularFile)) {
 
+        try{
+            var indexResult = indexRepository.tryGetUsingIndex(folderPath,filter);
             List<String> oldVersionPath= new ArrayList<>();
 
-            for(var path: paths.toList()){
-                String Result = FileManger.readFile(path.toString());
+            if(indexResult.isSuccess()){
+                for(var id: indexResult.getResult()){
+                    var filePath=MessageFormat.format("{0}/{1}.json", folderPath,id);
+                    String Result = FileManger.readFile(filePath);
 
-                if(Helper.isMatch(Result,filter)){
-                    var updatedDocument=update(path,newDocument);
+                    var updatedDocument=update(Path.of(filePath),newDocument);
                     oldVersionPath.addAll(indexRepository.deleteFromIndex(folderPath,Result));
                     oldVersionPath.addAll(indexRepository.addToIndex(folderPath,updatedDocument));
-                    oldVersionPath.add(path.toString());
+                    oldVersionPath.add(filePath);
+                }
+            }else if(indexResult.getResult() != null) {
+                for(var id: indexResult.getResult()){
+                    var filePath=MessageFormat.format("{0}/{1}.json", folderPath,id);
+                    String Result = FileManger.readFile(filePath);
+
+                    if(Helper.isMatch(Result,filter)){
+                        var updatedDocument=update(Path.of(filePath),newDocument);
+                        oldVersionPath.addAll(indexRepository.deleteFromIndex(folderPath,Result));
+                        oldVersionPath.addAll(indexRepository.addToIndex(folderPath,updatedDocument));
+                        oldVersionPath.add(filePath);
+                    }
+                }
+            } else {
+                Stream<Path> paths = Files.walk(Paths.get(folderPath),1).filter(Files::isRegularFile) ;
+
+                for(var path: paths.toList()){
+                    String Result =FileManger.readFile(path.toString());
+
+                    if(Helper.isMatch(Result,filter)){
+                        var updatedDocument=update(path,newDocument);
+                        oldVersionPath.addAll(indexRepository.deleteFromIndex(folderPath,Result));
+                        oldVersionPath.addAll(indexRepository.addToIndex(folderPath,updatedDocument));
+                        oldVersionPath.add(path.toString());
+                    }
                 }
             }
 
             FileManger.removeFromOldVersion(oldVersionPath);
             return new ResponseModel.Builder<Boolean>(true).Result(true).build();
+        }  catch (JsonProcessingException ex){
+            return new ResponseModel.Builder<Boolean>(false).message("Wrong Json").build();
         }catch (NoSuchFileException ex){
             return new ResponseModel.Builder<Boolean>(false).message("Wrong database or type").build();
         }

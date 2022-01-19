@@ -44,8 +44,8 @@ public class FileManger {
         Files.writeString(Path.of(absolutePath),content);
     }
 
-    public synchronized static void deleteFromCache(String absolutePath){
-        FilesCache.remove(absolutePath);
+    public synchronized static void deleteFromCache(String path){
+        FilesCache.remove(Path.of(path).toAbsolutePath().toString());
     }
 
     public synchronized static void addToOldVersion(String path) throws IOException {
