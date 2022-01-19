@@ -11,4 +11,5 @@ public interface ISchemaService {
     ResponseModel<Boolean> importSchema(DataBaseSchema schema);
     ResponseModel<DataBaseSchema> exportSchema(String database);
     boolean checkDatabaseExist(String dataBase);
+    void createNewNode(String url);
 }

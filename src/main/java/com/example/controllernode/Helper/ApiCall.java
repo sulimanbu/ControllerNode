@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class ApiCall {
 
-    public static ResponseModel<String> post(String Url, String body) throws UnsupportedEncodingException, UnirestException {
+    public static ResponseModel<String> post(String Url, String body) throws UnirestException {
         Map<String, String> headers = new HashMap<>();
         headers.put("Content-Type", "application/json");
         headers.put("Authorization", JWT.createJWTForNode());

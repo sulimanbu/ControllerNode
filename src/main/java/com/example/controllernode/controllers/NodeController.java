@@ -1,31 +1,32 @@
 package com.example.controllernode.controllers;
 
-import com.example.controllernode.Helper.ApiCall;
-import com.example.controllernode.Helper.JWT;
 import com.example.controllernode.Helper.NodesManger;
-import com.example.controllernode.Model.LogInModel;
 import com.example.controllernode.Model.ResponseModel;
-import com.mashape.unirest.http.exceptions.UnirestException;
+import com.example.controllernode.Services.IServices.ISchemaService;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import java.io.UnsupportedEncodingException;
 
 @RestController
 @RequestMapping("/Node")
 public class NodeController {
 
+    final ISchemaService schemaService;
+    public NodeController(ISchemaService schemaService) {
+        this.schemaService = schemaService;
+    }
+
     @PostMapping( "/addNode")
-    public ResponseModel addNode(@RequestParam String node)  {
+    public ResponseModel<Boolean> addNode(@RequestParam String node)  {
+        schemaService.createNewNode(node);
         NodesManger.addNode(node);
 
         return new ResponseModel.Builder<Boolean>(true).Result(true).build();
     }
 
     @PostMapping( "/addNodeUrl")
-    public ResponseModel addNodeUrl(@RequestParam String node) {
+    public ResponseModel<Boolean> addNodeUrl(@RequestParam String node) {
         NodesManger.addNodeUrl(node);
 
         return new ResponseModel.Builder<Boolean>(true).Result(true).build();
     }
+
 }

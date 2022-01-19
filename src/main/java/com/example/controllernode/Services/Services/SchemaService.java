@@ -1,12 +1,14 @@
 package com.example.controllernode.Services.Services;
 
+import com.example.controllernode.Helper.ApiCall;
 import com.example.controllernode.Model.DataBaseSchema;
 import com.example.controllernode.Model.ResponseModel;
 import com.example.controllernode.Model.Type;
 import com.example.controllernode.Repository.IRepositories.IIndexRepository;
-import com.example.controllernode.Services.Helper.Helper;
+import com.example.controllernode.Services.Helper.FileManger;
 import com.example.controllernode.Services.Helper.IdGenerator;
 import com.example.controllernode.Services.IServices.ISchemaService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -16,7 +18,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 @Service
@@ -134,9 +138,7 @@ public class SchemaService implements ISchemaService {
         var indexPath=Path.of(MessageFormat.format("{0}/{1}/{2}", folderPath,typeName,"index"));
         if(Files.exists(indexPath)){
             Files.walk(indexPath,1).filter(Files::isRegularFile)
-                    .forEach(filePath1 -> {
-                        indexes.add(filePath1.getFileName().toString().replace(".json",""));
-                    });
+                    .forEach(filePath1 -> indexes.add(filePath1.getFileName().toString().replace(".json","")));
         }
 
         return indexes;
@@ -145,5 +147,27 @@ public class SchemaService implements ISchemaService {
     public boolean checkDatabaseExist(String dataBase){
         var folderPath=MessageFormat.format("NoSqlDB/DB/{0}", dataBase);
         return Files.exists(Path.of(folderPath));
+    }
+
+    public void createNewNode(String url){
+        Map<String,String> database = new HashMap<>();
+        try(Stream<Path> paths = Files.walk(Paths.get("NoSqlDB/DB"))) {
+
+            for (var path : paths.toList()) {
+                if (Files.isRegularFile(path)){
+                    String Result = FileManger.readFile(path.toString());
+                    database.put(path.toString(),Result);
+                }else if(Files.isDirectory(path)) {
+                    database.put(path.toString(),"");
+                }
+
+            }
+
+            ObjectMapper Obj = new ObjectMapper();
+            ApiCall.post(MessageFormat.format("{0}/Schema/initDatabase",url),Obj.writeValueAsString(database));
+        }
+        catch (Exception ex){
+            return ;
+        }
     }
 }
