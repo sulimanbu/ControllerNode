@@ -13,6 +13,7 @@ public class FileManger {
     }
 
     final static int maxSize=1000;
+    final static int numberToRemove=100;
     private static final ConcurrentHashMap<String, String> FilesCache = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, String> FilesOldVersion= new ConcurrentHashMap<>();
 
@@ -71,9 +72,11 @@ public class FileManger {
             int i=0;
             var keys=FilesCache.keys().asIterator();
            while(keys.hasNext()){
-               if(i<100){
+               if(i<numberToRemove){
                    FilesCache.remove(keys.next());
                    i++;
+               }else{
+                   return;
                }
            }
         }
