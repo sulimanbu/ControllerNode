@@ -21,7 +21,7 @@ public class ReaderController {
         return readerService.GetById(CurrentUser.getDatabase(), type, id);
     }
 
-    @GetMapping("/Get")
+    @PostMapping("/Get")
     public ResponseModel<List<String>> Get(@RequestParam(value = "type", required = true) String type,
                                    @RequestBody String filter) {
 
