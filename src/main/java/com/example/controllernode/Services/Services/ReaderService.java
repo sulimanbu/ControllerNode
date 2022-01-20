@@ -80,6 +80,8 @@ public class ReaderService implements IReaderService {
         return new ResponseModel.Builder<List<String>>(true).Result(list).build();
         }  catch (JsonProcessingException ex){
             return new ResponseModel.Builder<List<String>>(false).message("Wrong Json").build();
+        }catch (NoSuchFileException ex){
+            return new ResponseModel.Builder<List<String>>(false).message("Wrong type").build();
         }catch (Exception ex){
             return new ResponseModel.Builder<List<String>>(false).message("error happened").build();
         }
@@ -97,7 +99,7 @@ public class ReaderService implements IReaderService {
 
             return new ResponseModel.Builder<List<String>>(true).Result(list).build();
         }catch (NoSuchFileException ex){
-            return new ResponseModel.Builder<List<String>>(false).message("Database Or Type Not Found").build();
+            return new ResponseModel.Builder<List<String>>(false).message("Type Not Found").build();
         }
         catch (Exception ex){
             return new ResponseModel.Builder<List<String>>(false).message("error happened").build();

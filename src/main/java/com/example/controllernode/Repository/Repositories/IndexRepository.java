@@ -25,7 +25,7 @@ public class IndexRepository implements IIndexRepository {
 
         Map<String, ArrayList<Integer>> index=new HashMap<>();
         for(var path: paths.toList()) {
-            var fileContent = new JSONObject(FileManger.readFile(path.toString()));
+            var fileContent = new JSONObject(Files.readString(path));
 
             if (fileContent.has(property)) {
                 var list = index.getOrDefault(fileContent.get(property).toString(), new ArrayList<>());
@@ -51,7 +51,7 @@ public class IndexRepository implements IIndexRepository {
                 var property=keys.next();
                 var filePath=Path.of(folderPath + "/index/" + property + ".json" );
                 if(Files.exists(filePath)){
-                    var fileContent=new JSONObject(FileManger.readFile(filePath.toString()));
+                    var fileContent=new JSONObject(Files.readString(filePath));
                     List array=new ArrayList<Object>();
                     if(fileContent.has(documentContent.get(property).toString())){
                         array=((JSONArray)fileContent.get(documentContent.get(property).toString())).toList();
@@ -79,7 +79,7 @@ public class IndexRepository implements IIndexRepository {
                 var property=keys.next();
                 var filePath=Path.of(folderPath + "/index/" + property + ".json" );
                 if(Files.exists(filePath)){
-                    var fileContent=new JSONObject(FileManger.readFile(filePath.toString()));
+                    var fileContent=new JSONObject(Files.readString(filePath));
                     if(fileContent.has(documentContent.get(property).toString())){
                         var array=(JSONArray)fileContent.get(documentContent.get(property).toString());
                         var array1=array.toList();

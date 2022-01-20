@@ -126,6 +126,10 @@ public class WriterService implements IWriterService {
 
             FileManger.removeFromOldVersion(oldVersionPath);
             return new ResponseModel.Builder<Boolean>(true).Result(true).build();
+        }  catch (JsonProcessingException ex){
+            return new ResponseModel.Builder<Boolean>(false).message("Wrong Json").build();
+        }catch (NoSuchFileException ex){
+            return new ResponseModel.Builder<Boolean>(false).message("Wrong database or type").build();
         }
         catch (Exception ex){
             return new ResponseModel.Builder<Boolean>(false).message("error happened").build();
@@ -150,6 +154,8 @@ public class WriterService implements IWriterService {
             FileManger.removeFromOldVersion(oldVersionPath);
 
             return new ResponseModel.Builder<Boolean>(false).message("Wrong Id").build();
+        }  catch (NoSuchFileException ex){
+            return new ResponseModel.Builder<Boolean>(false).message("Wrong database or type").build();
         }
         catch (Exception ex){
             return new ResponseModel.Builder<Boolean>(false).message("error happened").build();

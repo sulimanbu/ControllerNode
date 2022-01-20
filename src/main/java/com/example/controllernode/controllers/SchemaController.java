@@ -40,7 +40,7 @@ public class SchemaController {
         return result;
     }
 
-    @PostMapping("/Schema/createIndex")
+    @PostMapping("/createIndex")
     ResponseModel<Boolean> createIndex(@RequestParam String dataBase,@RequestParam String type,@RequestParam String property){
         var result= schemaService.createIndex(dataBase, type, property);
         if (result.isSuccess()){
