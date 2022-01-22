@@ -14,10 +14,8 @@ public class FileManger {
         throw new AssertionError();
     }
 
-    @Value("${spring.application.Max_Size_For_Caching}")
-    static int maxSize;
-    @Value("${spring.application.Number_To_Remove_When_Cache_Full}")
-    static int numberToRemove;
+    static int maxSize=1000;
+    static int numberToRemove=1000;
 
     private static final ConcurrentHashMap<String, String> FilesCache = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, String> FilesOldVersion= new ConcurrentHashMap<>();

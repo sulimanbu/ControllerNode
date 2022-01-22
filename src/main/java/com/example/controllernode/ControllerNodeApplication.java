@@ -1,22 +1,30 @@
 package com.example.controllernode;
 
-import com.example.controllernode.Model.Role;
 import com.example.controllernode.Services.Helper.IdGenerator;
 import com.example.controllernode.Services.IServices.IUserService;
-import com.example.controllernode.Services.Services.SchemaService;
 import com.example.controllernode.Services.Services.UserService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 
 @SpringBootApplication
 public class ControllerNodeApplication {
 
-    public static void main(String[] args) {
-        final IUserService userService=new UserService();
+    final IUserService userService;
 
-        userService.addFirstUser();
-        IdGenerator.getOldIds();
+    public ControllerNodeApplication(IUserService userService) {
+        this.userService = userService;
+    }
+
+    public static void main(String[] args) {
         SpringApplication.run(ControllerNodeApplication.class, args);
     }
 
+    @EventListener(ApplicationReadyEvent.class)
+    public void doSomethingAfterStartup()  {
+        userService.addFirstUser();
+        IdGenerator.getOldIds();
+
+    }
 }

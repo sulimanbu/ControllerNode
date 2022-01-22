@@ -4,7 +4,6 @@ import com.example.controllernode.Helper.CurrentUser;
 import com.example.controllernode.Model.ResponseModel;
 import com.example.controllernode.Services.Helper.FileManger;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
@@ -20,14 +19,11 @@ import java.text.MessageFormat;
 @Component
 public class ChangePasswordFilter implements Filter {
 
-    @Value("${spring.application.Users_Base_Path}")
-    String Users_Base_Path;
-
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws ServletException, IOException {
 
         try {
-            var filePath=MessageFormat.format("{0}/{1}.json", Users_Base_Path,CurrentUser.getUser().getUsername());
+            var filePath=MessageFormat.format("NoSqlDB/Users/{0}.json", CurrentUser.getUser().getUsername());
             String Result = Files.readString(Path.of(filePath));
             var user=new JSONObject(Result);
 
