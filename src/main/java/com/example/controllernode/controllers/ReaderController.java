@@ -12,24 +12,27 @@ import java.util.List;
 @RequestMapping("/api/Reader")
 public class ReaderController {
 
-    @Autowired
-    IReaderService readerService;
+    final IReaderService readerService;
+
+    public ReaderController(IReaderService readerService) {
+        this.readerService = readerService;
+    }
 
     @GetMapping("/GetById")
-    public ResponseModel<String> GetById(@RequestParam(value = "type", required = true) String type,
-                                 @RequestParam(value = "id", required = true) int id) {
+    public ResponseModel<String> GetById(@RequestParam(value = "type") String type,
+                                 @RequestParam(value = "id") int id) {
         return readerService.GetById(CurrentUser.getDatabase(), type, id);
     }
 
     @PostMapping("/Get")
-    public ResponseModel<List<String>> Get(@RequestParam(value = "type", required = true) String type,
+    public ResponseModel<List<String>> Get(@RequestParam(value = "type") String type,
                                    @RequestBody String filter) {
 
         return readerService.Get(CurrentUser.getDatabase(), type, filter);
     }
 
     @GetMapping("/GetAll")
-    public ResponseModel<List<String>> GetAll(@RequestParam(value = "type", required = true) String type)  {
+    public ResponseModel<List<String>> GetAll(@RequestParam(value = "type") String type)  {
         return readerService.GetAll(CurrentUser.getDatabase(), type);
     }
 }

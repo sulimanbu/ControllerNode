@@ -7,6 +7,7 @@ import com.example.controllernode.Model.User;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -18,6 +19,10 @@ import com.example.controllernode.Helper.CurrentUser;
 
 @Service
 public class UserService implements IUserService {
+
+    @Value("${spring.application.Users_Base_Path}")
+    String Users_Base_Path;
+
     @Override
     public synchronized ResponseModel<Boolean> addUser(User user) {
         return Add(user.getUsername(), user.toString());
@@ -34,7 +39,7 @@ public class UserService implements IUserService {
         try{
             createUsersDir();
 
-            var filePath= Path.of(MessageFormat.format("NoSqlDB/Users/{0}.json", username));
+            var filePath= Path.of(MessageFormat.format("{0}/{1}.json",Users_Base_Path, username));
             if(!Files.exists(filePath)){
                 Files.writeString(filePath, user);
 
@@ -50,7 +55,7 @@ public class UserService implements IUserService {
     @Override
     public synchronized ResponseModel<User> validateUser(String username, String password){
         try {
-            var filePath=Path.of(MessageFormat.format("NoSqlDB/Users/{0}.json", username));
+            var filePath=Path.of(MessageFormat.format("{0}/{1}.json",Users_Base_Path, username));
             String Result = Files.readString(filePath);
 
             User user = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).readValue(Result, User.class);
@@ -70,7 +75,7 @@ public class UserService implements IUserService {
     @Override
     public synchronized ResponseModel<Boolean> updatePassword(String password) {
         try {
-            var filePath=Path.of(MessageFormat.format("NoSqlDB/Users/{0}.json", CurrentUser.getUser().getUsername()));
+            var filePath=Path.of(MessageFormat.format("{0}/{1}.json", Users_Base_Path,CurrentUser.getUser().getUsername()));
             String Result =Files.readString(filePath);
 
             var user=new JSONObject(Result);
@@ -88,7 +93,7 @@ public class UserService implements IUserService {
     }
 
     private void createUsersDir() throws IOException {
-        var path=Path.of("NoSqlDB/Users");
+        var path=Path.of(Users_Base_Path);
         if(!Files.exists(path)){
             Files.createDirectories(path);
         }

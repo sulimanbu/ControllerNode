@@ -1,17 +1,20 @@
 package com.example.controllernode.Services.Helper;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 public class IdGenerator {
+    @Value("${spring.application.Data_Base_Path}")
+    static String Data_Base_Path;
+
     private IdGenerator(){
         throw new AssertionError();
     }
-
     private static final ConcurrentHashMap<String, Integer> ids= new ConcurrentHashMap<>();
 
     public static synchronized int getId(String path){
@@ -22,11 +25,10 @@ public class IdGenerator {
             return id;
         }
 
-        ids.put(absolutePath,2);
-        return 1;
+        ids.put(absolutePath,2);        return 1;
     }
 
-    public static void addNewType(String path){
+    public static synchronized void addNewType(String path){
         var absolutePath=Path.of(path).toAbsolutePath().toString();
         if(!ids.containsKey(absolutePath)){
             ids.put(absolutePath,1);
@@ -34,10 +36,10 @@ public class IdGenerator {
     }
 
     public static void getOldIds(){
-        try(Stream<Path> paths = Files.walk(Paths.get("NoSqlDB/DB"),1).filter(Files::isDirectory)) {
+        try(Stream<Path> paths = Files.walk(Paths.get(Data_Base_Path),1).filter(Files::isDirectory)) {
 
             for(var databasePath: paths.toList()){
-                if(!Files.isSameFile(databasePath,Path.of("NoSqlDB/DB"))){
+                if(!Files.isSameFile(databasePath,Path.of(Data_Base_Path))){
                     for (var typePath:Files.walk(databasePath,1).filter(Files::isDirectory).toList()){
                         if(!Files.isSameFile(typePath,databasePath)){
                             final int[] max = {0};

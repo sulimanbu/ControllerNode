@@ -9,6 +9,7 @@ import com.example.controllernode.Services.Helper.FileManger;
 import com.example.controllernode.Services.Helper.IdGenerator;
 import com.example.controllernode.Services.IServices.ISchemaService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -26,6 +27,9 @@ import java.util.stream.Stream;
 @Service
 public class SchemaService implements ISchemaService {
 
+    @Value("${spring.application.Data_Base_Path}")
+    String Data_Base_Path;
+
     IIndexRepository indexRepository;
     public SchemaService(IIndexRepository indexRepository){
         this.indexRepository=indexRepository;
@@ -34,10 +38,10 @@ public class SchemaService implements ISchemaService {
     @Override
     public synchronized ResponseModel<Boolean> createDatabase(String dataBase){
         try{
-            var folderPath=MessageFormat.format("NoSqlDB/DB/{0}", dataBase);
-            if(!Files.exists(Path.of(folderPath))){
+            var folderPath=Path.of(MessageFormat.format("{0}/{1}", Data_Base_Path,dataBase));
+            if(!Files.exists(folderPath)){
 
-                Files.createDirectories(Path.of(folderPath));
+                Files.createDirectories(folderPath);
                 return new ResponseModel.Builder<Boolean>(true).Result(true).build();
             } else {
                 return new ResponseModel.Builder<Boolean>(false).message("Its already created").build();
@@ -49,10 +53,12 @@ public class SchemaService implements ISchemaService {
     @Override
     public synchronized ResponseModel<Boolean> createType(String dataBase, String type){
         try{
-            if(!Files.exists(Path.of(MessageFormat.format("NoSqlDB/DB/{0}/{1}", dataBase,type)))){
+            var folderPath=Path.of(MessageFormat.format("{0}/{1}/{2}", Data_Base_Path,dataBase,type));
+
+            if(!Files.exists(folderPath)){
                 IdGenerator.addNewType(MessageFormat.format("{0}/{1}", dataBase,type));
 
-                Files.createDirectory(Path.of(MessageFormat.format("NoSqlDB/DB/{0}/{1}", dataBase,type)));
+                Files.createDirectory(folderPath);
                 return new ResponseModel.Builder<Boolean>(true).Result(true).build();
             } else {
                 return new ResponseModel.Builder<Boolean>(false).message("Its already created").build();
@@ -64,7 +70,7 @@ public class SchemaService implements ISchemaService {
     @Override
     public synchronized ResponseModel<Boolean> createIndex(String dataBase, String type, String property) {
         try{
-            var folderPath=MessageFormat.format("NoSqlDB/DB/{0}/{1}", dataBase,type);
+            var folderPath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
             if(Files.exists(Path.of(folderPath))){
                 var indexFolder=Path.of(MessageFormat.format("{0}/index", folderPath));
                 if(!Files.exists(indexFolder)){
@@ -106,7 +112,7 @@ public class SchemaService implements ISchemaService {
     @Override
     public ResponseModel<DataBaseSchema> exportSchema(String database) {
         try{
-            var folderPath=MessageFormat.format("NoSqlDB/DB/{0}", database);
+            var folderPath=MessageFormat.format("{0}/{1}",Data_Base_Path, database);
 
             List<Type> types= new ArrayList<>();
             Files.walk(Paths.get(folderPath),1).filter(Files::isDirectory).forEach(filePath -> {
@@ -117,7 +123,6 @@ public class SchemaService implements ISchemaService {
                         types.add(new Type(typeName,getIndexes(folderPath,typeName)));
                     }
                 } catch (IOException e) {
-                    //e.printStackTrace();
                 }
 
             });
@@ -145,13 +150,13 @@ public class SchemaService implements ISchemaService {
     }
 
     public boolean checkDatabaseExist(String dataBase){
-        var folderPath=MessageFormat.format("NoSqlDB/DB/{0}", dataBase);
+        var folderPath=MessageFormat.format("{0}/{1}", Data_Base_Path,dataBase);
         return Files.exists(Path.of(folderPath));
     }
 
     public void createNewNode(String url){
         Map<String,String> database = new HashMap<>();
-        try(Stream<Path> paths = Files.walk(Paths.get("NoSqlDB/DB"))) {
+        try(Stream<Path> paths = Files.walk(Paths.get(Data_Base_Path))) {
 
             for (var path : paths.toList()) {
                 if (Files.isRegularFile(path)){

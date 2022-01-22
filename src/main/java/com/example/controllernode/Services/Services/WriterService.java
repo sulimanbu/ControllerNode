@@ -8,6 +8,7 @@ import com.example.controllernode.Services.Helper.IdGenerator;
 import com.example.controllernode.Services.IServices.IWriterService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -20,6 +21,9 @@ import java.util.stream.Stream;
 @Service
 public class WriterService implements IWriterService {
 
+    @Value("${spring.application.Data_Base_Path}")
+    String Data_Base_Path;
+
     IIndexRepository indexRepository;
     public WriterService(IIndexRepository indexRepository){
         this.indexRepository=indexRepository;
@@ -29,7 +33,7 @@ public class WriterService implements IWriterService {
     public synchronized ResponseModel<String> addDocument(String dataBase, String type, String document){
         try{
             List<String> oldVersionPath= new ArrayList<>();
-            var filePath=MessageFormat.format("NoSqlDB/DB/{0}/{1}", dataBase,type);
+            var filePath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
             if(Files.exists(Path.of(filePath))){
                 int id = IdGenerator.getId(filePath);
                 var result= add(Path.of(MessageFormat.format("{0}/{1}.json", filePath,id)),id,document);
@@ -57,8 +61,8 @@ public class WriterService implements IWriterService {
     @Override
     public synchronized ResponseModel<Boolean> deleteDocumentById(String dataBase, String type,int id) {
         try{
-            var folderPath=MessageFormat.format("NoSqlDB/DB/{0}/{1}", dataBase,type);
-            var filePath=Path.of(MessageFormat.format("NoSqlDB/DB/{0}/{1}/{2}.json", dataBase,type,id));
+            var folderPath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
+            var filePath=Path.of(MessageFormat.format("{0}/{1}.json",folderPath ,id));
 
             List<String> oldVersionPath= new ArrayList<>();
             var result= FileManger.readFile(filePath.toString());
@@ -82,7 +86,7 @@ public class WriterService implements IWriterService {
     }
     @Override
     public synchronized ResponseModel<Boolean> deleteDocument(String dataBase, String type,String filter) {
-        var folderPath=MessageFormat.format("NoSqlDB/DB/{0}/{1}", dataBase,type);
+        var folderPath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
         try {
             var indexResult = indexRepository.tryGetUsingIndex(folderPath, filter);
             List<String> oldVersionPath = new ArrayList<>();
@@ -140,8 +144,7 @@ public class WriterService implements IWriterService {
     public synchronized ResponseModel<Boolean> updateDocumentById(String dataBase, String type,int id,String newDocument) {
         try{
             List<String> oldVersionPath= new ArrayList<>();
-
-            var folderPath=MessageFormat.format("NoSqlDB/DB/{0}/{1}", dataBase,type);
+            var folderPath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
             var filepath=Path.of(MessageFormat.format("{0}/{1}.json", folderPath,id));
             if(Files.exists(filepath)){
                 var oldDocument=FileManger.readFile(filepath.toString());
@@ -163,7 +166,7 @@ public class WriterService implements IWriterService {
     }
     @Override
     public synchronized ResponseModel<Boolean> updateDocument(String dataBase, String type,String filter,String newDocument) {
-        var folderPath=MessageFormat.format("NoSqlDB/DB/{0}/{1}", dataBase,type);
+        var folderPath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
 
         try{
             var indexResult = indexRepository.tryGetUsingIndex(folderPath,filter);

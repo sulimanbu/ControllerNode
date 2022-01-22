@@ -6,6 +6,7 @@ import com.example.controllernode.Services.Helper.FileManger;
 import com.example.controllernode.Services.Helper.Helper;
 import com.example.controllernode.Services.IServices.IReaderService;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 
@@ -21,6 +22,9 @@ import java.util.stream.Stream;
 @Service
 public class ReaderService implements IReaderService {
 
+    @Value("${spring.application.Data_Base_Path}")
+    String Data_Base_Path;
+
     IIndexRepository indexRepository;
     public ReaderService(IIndexRepository indexRepository){
         this.indexRepository=indexRepository;
@@ -29,7 +33,7 @@ public class ReaderService implements IReaderService {
     @Override
     public ResponseModel<String> GetById(String dataBase,String type,int id) {
         try {
-            var filePath=MessageFormat.format("NoSqlDB/DB/{0}/{1}/{2}.json", dataBase,type,id);
+            var filePath=MessageFormat.format("{0}/{1}/{2}/{3}.json",Data_Base_Path ,dataBase,type,id);
             String Result = FileManger.readFile(filePath);
 
             return new ResponseModel.Builder<String>(true).Result(Result).build();
@@ -42,42 +46,41 @@ public class ReaderService implements IReaderService {
 
     @Override
     public ResponseModel<List<String>> Get(String dataBase, String type, String filter) {
-        var folderPath=MessageFormat.format("NoSqlDB/DB/{0}/{1}", dataBase,type);
+        var folderPath=MessageFormat.format("{0}/{1}/{2}",Data_Base_Path ,dataBase,type);
 
         try{
-        var indexResult = indexRepository.tryGetUsingIndex(folderPath,filter);
+            var indexResult = indexRepository.tryGetUsingIndex(folderPath,filter);
 
-        List<String> list=new ArrayList<>();
-        if(indexResult.isSuccess()){
-            for(var id: indexResult.getResult()){
+            List<String> list=new ArrayList<>();
+            if(indexResult.isSuccess()){
+                for(var id: indexResult.getResult()){
 
-                var filePath=MessageFormat.format("{0}/{1}.json", folderPath,id);
-                String Result = FileManger.readFile(filePath);
-
-                list.add(Result);
-            }
-        }else if(indexResult.getResult() != null) {
-            for(var id: indexResult.getResult()){
-
-                var filePath=MessageFormat.format("{0}/{1}.json", folderPath,id);
-                String Result = FileManger.readFile(filePath);
-                if(Helper.isMatch(Result,filter)){
+                    var filePath=MessageFormat.format("{0}/{1}.json", folderPath,id);
+                    String Result = FileManger.readFile(filePath);
                     list.add(Result);
                 }
-            }
-        } else {
-            Stream<Path> paths = Files.walk(Paths.get(folderPath),1).filter(Files::isRegularFile);
+            }else if(indexResult.getResult() != null) {
+                for(var id: indexResult.getResult()){
 
-            for(var path: paths.toList()){
-                String Result = FileManger.readFile(path.toString());
+                    var filePath=MessageFormat.format("{0}/{1}.json", folderPath,id);
+                    String Result = FileManger.readFile(filePath);
+                    if(Helper.isMatch(Result,filter)){
+                        list.add(Result);
+                    }
+                }
+            } else {
+                Stream<Path> paths = Files.walk(Paths.get(folderPath),1).filter(Files::isRegularFile);
 
-                if(Helper.isMatch(Result,filter)){
-                    list.add(Result);
+                for(var path: paths.toList()){
+                    String Result = FileManger.readFile(path.toString());
+
+                    if(Helper.isMatch(Result,filter)){
+                        list.add(Result);
+                    }
                 }
             }
-        }
 
-        return new ResponseModel.Builder<List<String>>(true).Result(list).build();
+            return new ResponseModel.Builder<List<String>>(true).Result(list).build();
         }  catch (JsonProcessingException ex){
             return new ResponseModel.Builder<List<String>>(false).message("Wrong Json").build();
         }catch (NoSuchFileException ex){
@@ -89,7 +92,7 @@ public class ReaderService implements IReaderService {
 
     @Override
     public ResponseModel<List<String>> GetAll(String dataBase, String type) {
-        try(Stream<Path> paths = Files.walk(Paths.get(MessageFormat.format("NoSqlDB/DB/{0}/{1}", dataBase,type)),1).filter(Files::isRegularFile)) {
+        try(Stream<Path> paths = Files.walk(Paths.get(MessageFormat.format("{0}/{1}/{2}", Data_Base_Path,dataBase,type)),1).filter(Files::isRegularFile)) {
 
             List<String> list=new ArrayList<>();
             for(var path: paths.toList()){
@@ -100,8 +103,7 @@ public class ReaderService implements IReaderService {
             return new ResponseModel.Builder<List<String>>(true).Result(list).build();
         }catch (NoSuchFileException ex){
             return new ResponseModel.Builder<List<String>>(false).message("Type Not Found").build();
-        }
-        catch (Exception ex){
+        }catch (Exception ex){
             return new ResponseModel.Builder<List<String>>(false).message("error happened").build();
         }
     }

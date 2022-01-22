@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -36,7 +35,7 @@ public class IndexRepository implements IIndexRepository {
         String json = new ObjectMapper().writeValueAsString(index);
 
         FileManger.writeFile(folderPath+"/index/"+ property+ ".json",json);
-        FileManger.removeFromOldVersion(new ArrayList<String>(Collections.singleton(folderPath + "/index/" + property + ".json")));
+        FileManger.removeFromOldVersion(new ArrayList<>(Collections.singleton(folderPath + "/index/" + property + ".json")));
     }
 
     @Override
@@ -52,12 +51,12 @@ public class IndexRepository implements IIndexRepository {
                 var filePath=Path.of(folderPath + "/index/" + property + ".json" );
                 if(Files.exists(filePath)){
                     var fileContent=new JSONObject(Files.readString(filePath));
-                    List array=new ArrayList<Object>();
+                    List<Object> array=new ArrayList<>();
                     if(fileContent.has(documentContent.get(property).toString())){
                         array=((JSONArray)fileContent.get(documentContent.get(property).toString())).toList();
                     }
 
-                    array.add((Integer) documentContent.get("_id"));
+                    array.add( documentContent.get("_id"));
                     fileContent.put(documentContent.get(property).toString(),array);
 
                     oldVersionPaths.add(filePath.toString());
@@ -83,7 +82,7 @@ public class IndexRepository implements IIndexRepository {
                     if(fileContent.has(documentContent.get(property).toString())){
                         var array=(JSONArray)fileContent.get(documentContent.get(property).toString());
                         var array1=array.toList();
-                        array1.remove((Integer) documentContent.get("_id"));
+                        array1.remove(documentContent.get("_id"));
                         if(array1.isEmpty()){
                             fileContent.remove(documentContent.get(property).toString());
                         }else {
@@ -107,10 +106,10 @@ public class IndexRepository implements IIndexRepository {
             boolean isMatch=false;
             boolean isIndexJust = true;
 
-            List<Object> list=new ArrayList<Object>();
+            List<Object> list=new ArrayList<>();
             var keys=filterContent.keys();
             while(keys.hasNext()){
-                List<Object> array=new ArrayList<Object>();
+                List<Object> array=new ArrayList<>();
                 var property=keys.next();
                 var filePath=Path.of(folderPath + "/index/" + property + ".json" );
                 if(Files.exists(filePath)){
@@ -123,12 +122,12 @@ public class IndexRepository implements IIndexRepository {
                         if(!isMatch){
                             list.addAll(array);
                         }else {
-                            list = list.stream().filter(l -> array.contains(l)).toList();
+                            list = list.stream().filter(array::contains).toList();
                         }
 
                         isMatch=true;
                     }else {
-                        return new ResponseModel.Builder<List<Object>>(true).Result(new ArrayList<Object>()).build();
+                        return new ResponseModel.Builder<List<Object>>(true).Result(new ArrayList<>()).build();
                     }
                 }else {
                     isIndexJust = false;
