@@ -92,7 +92,8 @@ public class ReaderService implements IReaderService {
 
     @Override
     public ResponseModel<List<String>> GetAll(String dataBase, String type) {
-        try(Stream<Path> paths = Files.walk(Paths.get(MessageFormat.format("{0}/{1}/{2}", Data_Base_Path,dataBase,type)),1).filter(Files::isRegularFile)) {
+        try(Stream<Path> paths = Files.walk(Paths.get(MessageFormat.format("{0}/{1}/{2}", Data_Base_Path,dataBase,type)),1)
+                .filter(Files::isRegularFile)) {
 
             List<String> list=new ArrayList<>();
             for(var path: paths.toList()){

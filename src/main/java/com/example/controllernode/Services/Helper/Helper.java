@@ -1,6 +1,7 @@
 package com.example.controllernode.Services.Helper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Helper {
@@ -43,4 +44,12 @@ public class Helper {
         return isEqual;
     }
 
+    public static boolean isValidJSON(String jsonInString) {
+        try{
+            new JSONObject(jsonInString);
+            return true;
+        }catch (JSONException ex){
+            return false;
+        }
+    }
 }

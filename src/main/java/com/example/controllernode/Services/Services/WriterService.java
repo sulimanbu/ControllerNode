@@ -36,6 +36,7 @@ public class WriterService implements IWriterService {
         try{
             List<String> oldVersionPath= new ArrayList<>();
             var filePath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
+
             if(Files.exists(Path.of(filePath))){
                 int id = IdGenerator.getId(filePath);
                 var result= writerRepository.addDocument(Path.of(MessageFormat.format("{0}/{1}.json", filePath,id)),id,document);
