@@ -1,6 +1,6 @@
 package com.example.controllernode.Filters;
 
-import com.example.controllernode.Helper.CurrentUser;
+import com.example.controllernode.Model.CurrentUser;
 import com.example.controllernode.Model.ResponseModel;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -17,7 +17,8 @@ public class DatabaseConnectionFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         try {
-            var database=CurrentUser.getDatabase();
+            var currentUser=(CurrentUser)request.getAttribute("CurrentUser");
+            var database=currentUser.getDatabase();
 
             if(database == null || database.equals("")){
                 ((HttpServletResponse) response).setStatus(401);
@@ -34,7 +35,7 @@ public class DatabaseConnectionFilter implements Filter {
     }
 
     @Bean
-    public FilterRegistrationBean<DatabaseConnectionFilter> DatabaseConnectionFilter(){
+    public FilterRegistrationBean<DatabaseConnectionFilter> databaseConnectionFilter(){
         FilterRegistrationBean<DatabaseConnectionFilter> registrationBean
                 = new FilterRegistrationBean<>();
 

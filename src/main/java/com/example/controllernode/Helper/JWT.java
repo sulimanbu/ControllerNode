@@ -1,13 +1,12 @@
 package com.example.controllernode.Helper;
 
+import com.example.controllernode.Model.CurrentUser;
 import com.example.controllernode.Model.Role;
 import com.example.controllernode.Model.User;
-import com.example.controllernode.Services.IServices.IUserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.crypto.spec.SecretKeySpec;
@@ -17,8 +16,8 @@ import java.util.Date;
 
 public class JWT {
 
-    private static String SECRET_KEY = "oeRaYY7Wo24sDqKSX3IM9ASGmdGPmkTd9jo1QTy4b7P9Ze5_9hKolVX8xNrQDcNRfVEdTZNOuOyqEGhXEbdJI-ZQ19k_o9MI0y3eZN2lp9jow55FfXMiINEdt1XR85VipRLSOkT6kSpzs2x-jbLDiz9iFVzkd81YKxMgPA7VfZeQUm4n-mOmnWMaVX30zGFU4L3oPBctYKkl4dYfqYWqRNfrgPJVi5DGFjywgxx0ASEiJHtV72paI3fDR2XwlSkyhhmY-ICjCRmsJN4fX1pdoL8a18-aQrvyu4j0Os6dVPYIoPvvY0SAZtWYKHfM15g7A3HD4cVREf9cUsprCRK93w";
-    private static String SECRET_KEY_FOR_NODE= "My Key";
+    private static final String SECRET_KEY = "oeRaYY7Wo24sDqKSX3IM9ASGmdGPmkTd9jo1QTy4b7P9Ze5_9hKolVX8xNrQDcNRfVEdTZNOuOyqEGhXEbdJI-ZQ19k_o9MI0y3eZN2lp9jow55FfXMiINEdt1XR85VipRLSOkT6kSpzs2x-jbLDiz9iFVzkd81YKxMgPA7VfZeQUm4n-mOmnWMaVX30zGFU4L3oPBctYKkl4dYfqYWqRNfrgPJVi5DGFjywgxx0ASEiJHtV72paI3fDR2XwlSkyhhmY-ICjCRmsJN4fX1pdoL8a18-aQrvyu4j0Os6dVPYIoPvvY0SAZtWYKHfM15g7A3HD4cVREf9cUsprCRK93w";
+    private static final String SECRET_KEY_FOR_NODE= "My Key";
 
     public static String createJWT(String username,String role, String issuer) {
 
@@ -40,7 +39,7 @@ public class JWT {
         return builder.compact();
     }
 
-    public static String createJWTWithDatabase(String database,String nodeUrl) {
+    public static String createJWTWithDatabase(String database, String nodeUrl, CurrentUser CurrentUser) {
 
         SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
 
@@ -79,7 +78,8 @@ public class JWT {
         return builder.compact();
     }
 
-    public static void validate(String token){
+    public static CurrentUser validate(String token){
+        var CurrentUser=new CurrentUser();
         try {
             var claims=decodeJWT(token);
 
@@ -87,7 +87,7 @@ public class JWT {
             var role = (String) claims.get("role");
             if(username == null || role == null){
                 CurrentUser.setUser(null);
-                return;
+                return CurrentUser;
             }
 
             var database = (String) claims.get("database");
@@ -100,9 +100,11 @@ public class JWT {
                 CurrentUser.setDatabase("");
 
             CurrentUser.setUser(new User(username,"", Role.valueOf(role)));
+            return CurrentUser;
         }catch (Exception ex){
             CurrentUser.setUser(null);
             CurrentUser.setDatabase("");
+            return CurrentUser;
         }
     }
     public static boolean validateNodeJWT(String token){

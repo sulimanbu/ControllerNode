@@ -1,21 +1,16 @@
 package com.example.controllernode.Services.Services;
 
 import com.example.controllernode.Model.ResponseModel;
-import com.example.controllernode.Services.Helper.FileManger;
 import com.example.controllernode.Services.IServices.IUserService;
 import com.example.controllernode.Model.User;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.*;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.text.MessageFormat;
-import com.example.controllernode.Helper.CurrentUser;
 
 @Service
 public class UserService implements IUserService {
@@ -73,9 +68,9 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public synchronized ResponseModel<Boolean> updatePassword(String password) {
+    public synchronized ResponseModel<Boolean> updatePassword(String password,String username) {
         try {
-            var filePath=Path.of(MessageFormat.format("{0}/{1}.json", Users_Base_Path,CurrentUser.getUser().getUsername()));
+            var filePath=Path.of(MessageFormat.format("{0}/{1}.json", Users_Base_Path,username));
             String Result =Files.readString(filePath);
 
             var user=new JSONObject(Result);

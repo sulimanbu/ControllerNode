@@ -53,7 +53,6 @@ public class FileManger {
     public synchronized static void deleteFromCache(String path){
         FilesCache.remove(Path.of(path).toAbsolutePath().toString());
     }
-
     public synchronized static void addToOldVersion(String path) throws IOException {
         try{
             FilesOldVersion.put(Path.of(path).toAbsolutePath().toString(),readFile(path));
@@ -63,13 +62,11 @@ public class FileManger {
         deleteFromCache(path);
 
     }
-
     public synchronized static void removeFromOldVersion(List<String> paths){
         for (var path:paths){
             FilesOldVersion.remove(Path.of(path).toAbsolutePath().toString());
         }
     }
-
     private synchronized static void resize(){
         if(FilesCache.size() >= maxSize){
             int i=0;

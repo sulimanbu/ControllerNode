@@ -1,7 +1,7 @@
 package com.example.controllernode.controllers;
 
 
-import com.example.controllernode.Helper.CurrentUser;
+import com.example.controllernode.Model.CurrentUser;
 import com.example.controllernode.Model.ResponseModel;
 import com.example.controllernode.Model.Role;
 import com.example.controllernode.Model.User;
@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/User")
@@ -21,17 +23,20 @@ public class UserController {
     }
 
     @PostMapping( "/addUser")
-    public ResponseModel addUser(@RequestBody User user) {
+    public ResponseModel<Boolean> addUser(@RequestBody User user, HttpServletRequest request) {
+        var currentUser=(CurrentUser)request.getAttribute("CurrentUser");
 
-        if(CurrentUser.getUser().getRole()!= Role.administrator){
-            return new ResponseModel.Builder<String>(false).message("Your are not an administrator").build();
+        if(currentUser.getUser().getRole()!= Role.administrator){
+            return new ResponseModel.Builder<Boolean>(false).message("Your are not an administrator").build();
         }
 
         return userService.addUser(user);
     }
 
     @PostMapping( "/updatePassword")
-    public ResponseModel updatePassword(@RequestBody String password){
-        return userService.updatePassword(password);
+    public ResponseModel<Boolean> updatePassword(@RequestBody String password,HttpServletRequest request){
+        var currentUser=(CurrentUser)request.getAttribute("CurrentUser");
+
+        return userService.updatePassword(password,currentUser.getUser().getUsername());
     }
 }

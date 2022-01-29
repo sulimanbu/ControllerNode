@@ -1,5 +1,6 @@
 package com.example.controllernode.controllers;
 
+import com.example.controllernode.Model.CurrentUser;
 import com.example.controllernode.Helper.JWT;
 import com.example.controllernode.Helper.NodesManger;
 import com.example.controllernode.Model.DataBaseSchema;
@@ -7,11 +8,10 @@ import com.example.controllernode.Model.ResponseModel;
 import com.example.controllernode.Services.IServices.ISchemaService;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.text.MessageFormat;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/api/Schema")
@@ -60,17 +60,16 @@ public class SchemaController {
 
     @PostMapping("/exportSchema")
     ResponseModel<DataBaseSchema> exportSchema(@RequestParam String dataBase){
-        var result= schemaService.exportSchema(dataBase);
-
-        return result;
+        return schemaService.exportSchema(dataBase);
     }
 
     @GetMapping("/Connection")
-    ResponseModel<Map<String,String>> Connection(@RequestParam String dataBase){
+    ResponseModel<Map<String,String>> Connection(@RequestParam String dataBase, HttpServletRequest request){
         if(schemaService.checkDatabaseExist(dataBase)){
             Map<String,String> map=new HashMap<>();
             String nodeUrl= NodesManger.getNode();
-            map.put("Token", JWT.createJWTWithDatabase(dataBase,nodeUrl));
+            var currentUser=(CurrentUser)request.getAttribute("CurrentUser");
+            map.put("Token", JWT.createJWTWithDatabase(dataBase,nodeUrl,currentUser));
             map.put("NodeBaseUrl", nodeUrl);
             return new ResponseModel.Builder<Map<String,String>>(true).Result(map).build();
         }

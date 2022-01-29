@@ -2,21 +2,16 @@ package com.example.controllernode.Services.Services;
 
 import com.example.controllernode.Model.ResponseModel;
 import com.example.controllernode.Repository.IRepositories.IIndexRepository;
-import com.example.controllernode.Services.Helper.FileManger;
-import com.example.controllernode.Services.Helper.Helper;
+import com.example.controllernode.Services.Helper.*;
 import com.example.controllernode.Services.IServices.IReaderService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Service
@@ -84,7 +79,7 @@ public class ReaderService implements IReaderService {
         }  catch (JsonProcessingException ex){
             return new ResponseModel.Builder<List<String>>(false).message("Wrong Json").build();
         }catch (NoSuchFileException ex){
-            return new ResponseModel.Builder<List<String>>(false).message("Wrong type").build();
+            return new ResponseModel.Builder<List<String>>(false).message("Type Not Found").build();
         }catch (Exception ex){
             return new ResponseModel.Builder<List<String>>(false).message("error happened").build();
         }

@@ -25,14 +25,12 @@ public class IdGenerator {
         ids.put(absolutePath,2);
         return 1;
     }
-
     public static void addNewType(String path){
         var absolutePath=Path.of(path).toAbsolutePath().toString();
         if(!ids.containsKey(absolutePath)){
             ids.put(absolutePath,1);
         }
     }
-
     public static void getOldIds(){
         try(Stream<Path> paths = Files.walk(Paths.get("NoSqlDB/DB"),1).filter(Files::isDirectory)) {
 

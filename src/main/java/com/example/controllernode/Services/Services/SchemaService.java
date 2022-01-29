@@ -39,12 +39,12 @@ public class SchemaService implements ISchemaService {
     public synchronized ResponseModel<Boolean> createDatabase(String dataBase){
         try{
             var folderPath=Path.of(MessageFormat.format("{0}/{1}", Data_Base_Path,dataBase));
-            if(!Files.exists(folderPath)){
 
+            if(Files.exists(folderPath)){
+                return new ResponseModel.Builder<Boolean>(false).message("Its already created").build();
+            } else {
                 Files.createDirectories(folderPath);
                 return new ResponseModel.Builder<Boolean>(true).Result(true).build();
-            } else {
-                return new ResponseModel.Builder<Boolean>(false).message("Its already created").build();
             }
         } catch (Exception e) {
             return new ResponseModel.Builder<Boolean>(false).message("error happened").build();
@@ -55,13 +55,13 @@ public class SchemaService implements ISchemaService {
         try{
             var folderPath=Path.of(MessageFormat.format("{0}/{1}/{2}", Data_Base_Path,dataBase,type));
 
-            if(!Files.exists(folderPath)){
+            if(Files.exists(folderPath)){
+                return new ResponseModel.Builder<Boolean>(false).message("Its already created").build();
+            } else {
                 IdGenerator.addNewType(MessageFormat.format("{0}/{1}", dataBase,type));
 
                 Files.createDirectory(folderPath);
                 return new ResponseModel.Builder<Boolean>(true).Result(true).build();
-            } else {
-                return new ResponseModel.Builder<Boolean>(false).message("Its already created").build();
             }
         } catch (Exception e) {
             return new ResponseModel.Builder<Boolean>(false).message("error happened").build();
@@ -166,6 +166,10 @@ public class SchemaService implements ISchemaService {
                     database.put(path.toString(),"");
                 }
 
+            }
+
+            if(database.isEmpty()){
+                return;
             }
 
             ObjectMapper Obj = new ObjectMapper();

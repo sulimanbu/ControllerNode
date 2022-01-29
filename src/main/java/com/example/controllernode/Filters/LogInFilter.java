@@ -1,6 +1,5 @@
 package com.example.controllernode.Filters;
 
-import com.example.controllernode.Helper.CurrentUser;
 import com.example.controllernode.Helper.JWT;
 import com.example.controllernode.Model.ResponseModel;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -35,13 +34,15 @@ public class LogInFilter implements javax.servlet.Filter {
         HttpServletRequest req = (HttpServletRequest) servletRequest;
         var auth=req.getHeader("Authorization");
 
-        JWT.validate(auth);
+        var CurrentUser=JWT.validate(auth);
 
         if(CurrentUser.getUser() == null){
             ((HttpServletResponse) servletResponse).setStatus(401);
             servletResponse.getOutputStream().write(new ResponseModel.Builder<String>(false).message("unauthorized").build().toString().getBytes(StandardCharsets.UTF_8));
             return;
         }
+
+        servletRequest.setAttribute("CurrentUser",CurrentUser);
 
         filterChain.doFilter(servletRequest,servletResponse);
     }

@@ -1,11 +1,8 @@
 package com.example.controllernode.Services.Services;
 
 import com.example.controllernode.Model.ResponseModel;
-import com.example.controllernode.Repository.IRepositories.IIndexRepository;
-import com.example.controllernode.Repository.IRepositories.IWriterRepository;
-import com.example.controllernode.Services.Helper.FileManger;
-import com.example.controllernode.Services.Helper.Helper;
-import com.example.controllernode.Services.Helper.IdGenerator;
+import com.example.controllernode.Repository.IRepositories.*;
+import com.example.controllernode.Services.Helper.*;
 import com.example.controllernode.Services.IServices.IWriterService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,8 +11,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.nio.file.*;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Service
@@ -94,24 +90,8 @@ public class WriterService implements IWriterService {
 
                     writerRepository.deleteDocument(oldVersionPath,filePath,folderPath,Result);
                 }
-            } else if (indexResult.getResult() != null) {
-                for (var id : indexResult.getResult()) {
-                    var filePath = MessageFormat.format("{0}/{1}.json", folderPath, id);
-                    String Result = FileManger.readFile(filePath);
-
-                    if (Helper.isMatch(Result, filter)) {
-                        writerRepository.deleteDocument(oldVersionPath,filePath,folderPath,Result);
-                    }
-                }
             } else {
-                Stream<Path> paths = Files.walk(Path.of(folderPath),1).filter(Files::isRegularFile);
-                for (var path : paths.toList()) {
-                    String result = FileManger.readFile(path.toString());
-
-                    if (Helper.isMatch(result, filter)) {
-                        writerRepository.deleteDocument(oldVersionPath,path.toString(),folderPath,result);
-                    }
-                }
+                deleteDocumentBySearch(indexResult.getResult(),filter,oldVersionPath,folderPath);
             }
 
 
@@ -124,6 +104,27 @@ public class WriterService implements IWriterService {
         }
         catch (Exception ex){
             return new ResponseModel.Builder<Boolean>(false).message("error happened").build();
+        }
+    }
+
+    private void deleteDocumentBySearch(List<Object> result,String filter, List<String> oldVersionPath,String folderPath) throws IOException {
+        if (result != null) {
+            for (var id : result) {
+                var filePath = MessageFormat.format("{0}/{1}.json", folderPath, id);
+                checkAndDelete(filePath,filter,oldVersionPath,folderPath);
+            }
+        } else {
+            Stream<Path> paths = Files.walk(Path.of(folderPath),1).filter(Files::isRegularFile);
+            for (var path : paths.toList()) {
+                checkAndDelete(path.toString(),filter,oldVersionPath,folderPath);
+            }
+        }
+    }
+    private void checkAndDelete(String filePath,String filter, List<String> oldVersionPath,String folderPath) throws IOException {
+        String Result = FileManger.readFile(filePath);
+
+        if (Helper.isMatch(Result, filter)) {
+            writerRepository.deleteDocument(oldVersionPath,filePath,folderPath,Result);
         }
     }
 
@@ -164,25 +165,8 @@ public class WriterService implements IWriterService {
 
                     writerRepository.updateDocument(oldVersionPath,filePath,folderPath,Result,newDocument);
                 }
-            }else if(indexResult.getResult() != null) {
-                for(var id: indexResult.getResult()){
-                    var filePath=MessageFormat.format("{0}/{1}.json", folderPath,id);
-                    String Result = FileManger.readFile(filePath);
-
-                    if(Helper.isMatch(Result,filter)){
-                        writerRepository.updateDocument(oldVersionPath,filePath,folderPath,Result,newDocument);
-                    }
-                }
-            } else {
-                Stream<Path> paths = Files.walk(Paths.get(folderPath),1).filter(Files::isRegularFile) ;
-
-                for(var path: paths.toList()){
-                    String Result =FileManger.readFile(path.toString());
-
-                    if(Helper.isMatch(Result,filter)){
-                        writerRepository.updateDocument(oldVersionPath,path.toString(),folderPath,Result,newDocument);
-                    }
-                }
+            }else{
+                updateDocumentBySearch(indexResult.getResult(),filter,oldVersionPath,folderPath,newDocument);
             }
 
             FileManger.removeFromOldVersion(oldVersionPath);
@@ -194,6 +178,28 @@ public class WriterService implements IWriterService {
         }
         catch (Exception ex){
             return new ResponseModel.Builder<Boolean>(false).message("error happened").build();
+        }
+    }
+
+    private void updateDocumentBySearch(List<Object> result,String filter, List<String> oldVersionPath,String folderPath,String newDocument) throws IOException {
+        if(result != null) {
+            for(var id: result){
+                var filePath=MessageFormat.format("{0}/{1}.json", folderPath,id);
+                checkAndUpdate(filePath,filter,oldVersionPath,folderPath,newDocument);
+            }
+        } else {
+            Stream<Path> paths = Files.walk(Paths.get(folderPath),1).filter(Files::isRegularFile) ;
+
+            for(var path: paths.toList()){
+                checkAndUpdate(path.toString(),filter,oldVersionPath,folderPath,newDocument);
+            }
+        }
+    }
+    private void checkAndUpdate(String filePath,String filter, List<String> oldVersionPath,String folderPath,String newDocument) throws IOException {
+        String Result = FileManger.readFile(filePath);
+
+        if(Helper.isMatch(Result,filter)){
+            writerRepository.updateDocument(oldVersionPath,filePath,folderPath,Result,newDocument);
         }
     }
 }
