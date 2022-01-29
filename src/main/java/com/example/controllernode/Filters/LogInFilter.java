@@ -18,7 +18,7 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class LogInFilter implements javax.servlet.Filter {
     @Bean
-    public FilterRegistrationBean<LogInFilter> logIn1Filter(){
+    public FilterRegistrationBean<LogInFilter> LogIn1Filter(){
         FilterRegistrationBean<LogInFilter> registrationBean
                 = new FilterRegistrationBean<>();
 

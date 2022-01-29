@@ -35,7 +35,7 @@ public class DatabaseConnectionFilter implements Filter {
     }
 
     @Bean
-    public FilterRegistrationBean<DatabaseConnectionFilter> databaseConnectionFilter(){
+    public FilterRegistrationBean<DatabaseConnectionFilter> DatabaseConnectionFilter(){
         FilterRegistrationBean<DatabaseConnectionFilter> registrationBean
                 = new FilterRegistrationBean<>();
 

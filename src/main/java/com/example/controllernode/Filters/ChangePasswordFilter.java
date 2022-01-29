@@ -43,7 +43,7 @@ public class ChangePasswordFilter implements Filter {
     }
 
     @Bean
-    public FilterRegistrationBean<ChangePasswordFilter> changePasswordFilter(){
+    public FilterRegistrationBean<ChangePasswordFilter> ChangePasswordFilter(){
         FilterRegistrationBean<ChangePasswordFilter> registrationBean
                 = new FilterRegistrationBean<>();
 
