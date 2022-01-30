@@ -5,6 +5,7 @@ import com.example.controllernode.Repository.IRepositories.*;
 import com.example.controllernode.Services.Helper.*;
 import com.example.controllernode.Services.IServices.IWriterService;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -78,25 +79,13 @@ public class WriterService implements IWriterService {
     }
     @Override
     public synchronized ResponseModel<Boolean> deleteDocument(String dataBase, String type,String filter) {
-        var folderPath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
         try {
-            var indexResult = indexRepository.tryGetUsingIndex(folderPath, filter);
-            List<String> oldVersionPath = new ArrayList<>();
-
-            if (indexResult.isSuccess()) {
-                for (var id : indexResult.getResult()) {
-                    var filePath = MessageFormat.format("{0}/{1}.json", folderPath, id);
-                    String Result = FileManger.readFile(filePath);
-
-                    writerRepository.deleteDocument(oldVersionPath,filePath,folderPath,Result);
-                }
-            } else {
-                deleteDocumentBySearch(indexResult.getResult(),filter,oldVersionPath,folderPath);
+            var filterNode = new JSONObject(filter);
+            if(filterNode.has("_id")){
+                return tryDeleteById(dataBase,type,filterNode.getInt("_id"));
             }
 
-
-            FileManger.removeFromOldVersion(oldVersionPath);
-            return new ResponseModel.Builder<Boolean>(true).Result(true).build();
+            return tryDelete(dataBase, type, filter);
         }  catch (JsonProcessingException ex){
             return new ResponseModel.Builder<Boolean>(false).message("Wrong Json").build();
         }catch (NoSuchFileException ex){
@@ -107,6 +96,31 @@ public class WriterService implements IWriterService {
         }
     }
 
+    private ResponseModel<Boolean> tryDeleteById(String dataBase, String type, int id){
+        var result=deleteDocumentById(dataBase,type, id);
+        return new ResponseModel.Builder<Boolean>(result.isSuccess()).Result(result.getResult()).message(result.getMessage()).build();
+    }
+    private ResponseModel<Boolean> tryDelete(String dataBase, String type,String filter) throws IOException {
+        var folderPath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
+
+        var indexResult = indexRepository.tryGetUsingIndex(folderPath, filter);
+        List<String> oldVersionPath = new ArrayList<>();
+
+        if (indexResult.isSuccess()) {
+            for (var id : indexResult.getResult()) {
+                var filePath = MessageFormat.format("{0}/{1}.json", folderPath, id);
+                String Result = FileManger.readFile(filePath);
+
+                writerRepository.deleteDocument(oldVersionPath,filePath,folderPath,Result);
+            }
+        } else {
+            deleteDocumentBySearch(indexResult.getResult(),filter,oldVersionPath,folderPath);
+        }
+
+
+        FileManger.removeFromOldVersion(oldVersionPath);
+        return new ResponseModel.Builder<Boolean>(true).Result(true).build();
+    }
     private void deleteDocumentBySearch(List<Object> result,String filter, List<String> oldVersionPath,String folderPath) throws IOException {
         if (result != null) {
             for (var id : result) {
@@ -152,25 +166,14 @@ public class WriterService implements IWriterService {
     }
     @Override
     public synchronized ResponseModel<Boolean> updateDocument(String dataBase, String type,String filter,String newDocument) {
-        var folderPath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
 
         try{
-            var indexResult = indexRepository.tryGetUsingIndex(folderPath,filter);
-            List<String> oldVersionPath= new ArrayList<>();
-
-            if(indexResult.isSuccess()){
-                for(var id: indexResult.getResult()){
-                    var filePath=MessageFormat.format("{0}/{1}.json", folderPath,id);
-                    String Result = FileManger.readFile(filePath);
-
-                    writerRepository.updateDocument(oldVersionPath,filePath,folderPath,Result,newDocument);
-                }
-            }else{
-                updateDocumentBySearch(indexResult.getResult(),filter,oldVersionPath,folderPath,newDocument);
+            var filterNode = new JSONObject(filter);
+            if(filterNode.has("_id")){
+                return tryUpdateById(dataBase,type,filterNode.getInt("_id"),newDocument);
             }
 
-            FileManger.removeFromOldVersion(oldVersionPath);
-            return new ResponseModel.Builder<Boolean>(true).Result(true).build();
+            return tryUpdate(dataBase, type, filter,newDocument);
         }  catch (JsonProcessingException ex){
             return new ResponseModel.Builder<Boolean>(false).message("Wrong Json").build();
         }catch (NoSuchFileException ex){
@@ -181,6 +184,30 @@ public class WriterService implements IWriterService {
         }
     }
 
+    private ResponseModel<Boolean> tryUpdateById(String dataBase, String type, int id,String newDocument){
+        var result=updateDocumentById(dataBase,type, id,newDocument);
+        return new ResponseModel.Builder<Boolean>(result.isSuccess()).Result(result.getResult()).message(result.getMessage()).build();
+    }
+    private ResponseModel<Boolean> tryUpdate(String dataBase, String type,String filter,String newDocument) throws IOException {
+        var folderPath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
+
+        var indexResult = indexRepository.tryGetUsingIndex(folderPath,filter);
+        List<String> oldVersionPath= new ArrayList<>();
+
+        if(indexResult.isSuccess()){
+            for(var id: indexResult.getResult()){
+                var filePath=MessageFormat.format("{0}/{1}.json", folderPath,id);
+                String Result = FileManger.readFile(filePath);
+
+                writerRepository.updateDocument(oldVersionPath,filePath,folderPath,Result,newDocument);
+            }
+        }else{
+            updateDocumentBySearch(indexResult.getResult(),filter,oldVersionPath,folderPath,newDocument);
+        }
+
+        FileManger.removeFromOldVersion(oldVersionPath);
+        return new ResponseModel.Builder<Boolean>(true).Result(true).build();
+    }
     private void updateDocumentBySearch(List<Object> result,String filter, List<String> oldVersionPath,String folderPath,String newDocument) throws IOException {
         if(result != null) {
             for(var id: result){
