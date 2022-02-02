@@ -27,7 +27,7 @@ public class NodesManger {
                 connectCount++;
                 return controller;
             }
-            else if(connectCount==5)
+            else if(connectCount==nodeNumber*2)
                 connectCount=0;
             else
                 connectCount++;
