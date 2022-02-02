@@ -89,7 +89,6 @@ public class ReaderService implements IReaderService {
             return new ResponseModel.Builder<List<String>>(false).message(result.getMessage()).build();
         }
     }
-
     private ResponseModel<List<String>> tryGet(String dataBase, String type, String filter) throws IOException {
         var folderPath=MessageFormat.format("{0}/{1}/{2}",Data_Base_Path ,dataBase,type);
 

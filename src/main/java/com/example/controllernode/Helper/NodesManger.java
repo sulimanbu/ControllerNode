@@ -1,24 +1,40 @@
 package com.example.controllernode.Helper;
 
 import com.mashape.unirest.http.exceptions.UnirestException;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 public class NodesManger {
     static int nodeSelector =0;
+    static int connectCount = 1;
     static Set<String> nodes = Collections.synchronizedSet(new HashSet<>());
-    static Set<String> nodesUrl = Collections.synchronizedSet(new HashSet<String>());
+    static Set<String> nodesUrl = Collections.synchronizedSet(new HashSet<>());
 
     public NodesManger(){
         throw new AssertionError();
     }
 
     public static synchronized String getNode() {
-        nodesUrl.add("http://localhost:8080");
+        var controller=ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+
+        var nodeNumber=nodesUrl.size();
+        if(nodeNumber < 1){
+            return controller;
+        }else {
+            if(connectCount == 0) {
+                connectCount++;
+                return controller;
+            }
+            else if(connectCount==5)
+                connectCount=0;
+            else
+                connectCount++;
+        }
 
         var node=(String) nodesUrl.toArray()[nodeSelector];
-        nodeSelector= (nodeSelector+1)% nodesUrl.size();
+        nodeSelector= (nodeSelector+1)% nodeNumber;
         return node;
     }
 
@@ -37,17 +53,13 @@ public class NodesManger {
     }
 
     public static void updateNode(String url,String body){
-        Thread thread = new Thread(){
-            public void run(){
-                try {
-                    NodesManger.sendRequest(url,body);
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                } catch (UnirestException e) {
-                    e.printStackTrace();
-                };
+        Thread thread = new Thread(() -> {
+            try {
+                NodesManger.sendRequest(url,body);
+            } catch (UnsupportedEncodingException | UnirestException e) {
+                e.printStackTrace();
             }
-        };
+        });
 
         thread.start();
     }

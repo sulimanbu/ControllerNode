@@ -1,7 +1,5 @@
 package com.example.controllernode.Services.Helper;
 
-import org.springframework.beans.factory.annotation.Value;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -16,10 +14,10 @@ public class FileManger {
     }
 
     static int maxSize=1000;
-    static int numberToRemove=1000;
+    static int numberToRemove=100;
 
     private static final ConcurrentHashMap<String, String> FilesCache = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<String, String> FilesOldVersion= new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, String> FilesOldVersion = new ConcurrentHashMap<>();
 
     public synchronized static String readFile(String path) throws IOException {
         var absolutePath=Path.of(path).toAbsolutePath().toString();
