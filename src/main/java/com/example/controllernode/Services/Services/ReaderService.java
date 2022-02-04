@@ -28,7 +28,7 @@ public class ReaderService implements IReaderService {
     }
 
     @Override
-    public ResponseModel<String> GetById(String dataBase,String type,int id) {
+    public ResponseModel<String> GetById(String dataBase,String type,int id) throws IOException {
         try {
             var filePath=MessageFormat.format("{0}/{1}/{2}/{3}.json",Data_Base_Path ,dataBase,type,id);
             String Result = FileManger.readFile(filePath);
@@ -36,13 +36,11 @@ public class ReaderService implements IReaderService {
             return new ResponseModel.Builder<String>(true).Result(Result).build();
         } catch (NoSuchFileException ex){
             return new ResponseModel.Builder<String>(false).message("Wrong Id").build();
-        }catch (Exception ex){
-            return new ResponseModel.Builder<String>(false).message("error happened").build();
         }
     }
 
     @Override
-    public ResponseModel<List<String>> Get(String dataBase, String type, String filter) {
+    public ResponseModel<List<String>> Get(String dataBase, String type, String filter) throws IOException {
         try{
             var filterNode = new JSONObject(filter);
             if(filterNode.has("_id")){
@@ -54,13 +52,11 @@ public class ReaderService implements IReaderService {
             return new ResponseModel.Builder<List<String>>(false).message("Wrong Json").build();
         }catch (NoSuchFileException ex){
             return new ResponseModel.Builder<List<String>>(false).message("Type Not Found").build();
-        }catch (Exception ex){
-            return new ResponseModel.Builder<List<String>>(false).message("error happened").build();
         }
     }
 
     @Override
-    public ResponseModel<List<String>> GetAll(String dataBase, String type) {
+    public ResponseModel<List<String>> GetAll(String dataBase, String type) throws IOException {
         try(Stream<Path> paths = Files.walk(Paths.get(MessageFormat.format("{0}/{1}/{2}", Data_Base_Path,dataBase,type)),1)
                 .filter(Files::isRegularFile)) {
 
@@ -73,12 +69,10 @@ public class ReaderService implements IReaderService {
             return new ResponseModel.Builder<List<String>>(true).Result(list).build();
         }catch (NoSuchFileException ex){
             return new ResponseModel.Builder<List<String>>(false).message("Type Not Found").build();
-        }catch (Exception ex){
-            return new ResponseModel.Builder<List<String>>(false).message("error happened").build();
         }
     }
 
-    private ResponseModel<List<String>> tryGetById(String dataBase,String type,int id){
+    private ResponseModel<List<String>> tryGetById(String dataBase,String type,int id) throws IOException {
         List<String> list=new ArrayList<>();
         var result=GetById(dataBase,type, id);
         if(result.isSuccess()){

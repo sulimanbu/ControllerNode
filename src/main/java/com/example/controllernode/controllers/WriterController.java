@@ -4,6 +4,8 @@ import com.example.controllernode.Helper.NodesManger;
 import com.example.controllernode.Model.ResponseModel;
 import com.example.controllernode.Services.Helper.Helper;
 import com.example.controllernode.Services.IServices.IWriterService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.web.bind.annotation.*;
@@ -15,53 +17,82 @@ import java.text.MessageFormat;
 public class WriterController {
 
     final IWriterService writerService;
-
+    private static final Logger logger = LogManager.getLogger(WriterController.class);
     public WriterController(IWriterService writerService) {
         this.writerService = writerService;
     }
 
     @PostMapping("/addDocument")
     ResponseModel<String> addDocument(@RequestParam String dataBase,@RequestParam String type, @RequestBody String document){
-        if(!Helper.isValidJSON(document)){
-            return new ResponseModel.Builder<String>(false).message("Not Valid Json").build();
-        }
+        try{
+            if(!Helper.isValidJSON(document)){
+                return new ResponseModel.Builder<String>(false).message("Not Valid Json").build();
+            }
 
-        var result= writerService.addDocument(dataBase, type, document);
-        if (result.isSuccess()){
-            NodesManger.updateNode(MessageFormat.format("/Writer/addDocument?dataBase={0}&type={1}", dataBase,type),document);
+            var result= writerService.addDocument(dataBase, type, document);
+            if (result.isSuccess()){
+                NodesManger.updateNode(MessageFormat.format("/Writer/addDocument?dataBase={0}&type={1}", dataBase,type),document);
+            }
+            return result;
+        }catch (Exception ex){
+            logger.fatal("WriterController-addDocument Exception: ",ex);
+            return new ResponseModel.Builder<String>(false)
+                    .message("Error Happened").build();
         }
-        return result;
     }
 
     @PostMapping("/deleteDocumentById")
     ResponseModel<Boolean> deleteDocumentById(@RequestParam String dataBase,@RequestParam String type,@RequestParam int id){
-        var result= writerService.deleteDocumentById(dataBase, type, id);
-        if (result.isSuccess()){
-            NodesManger.updateNode(MessageFormat.format("/Writer/deleteDocumentById?dataBase={0}&type={1}&id={2}", dataBase,type,id),"");
+        try{
+            var result= writerService.deleteDocumentById(dataBase, type, id);
+            if (result.isSuccess()){
+                NodesManger.updateNode(MessageFormat.format("/Writer/deleteDocumentById?dataBase={0}&type={1}&id={2}", dataBase,type,id),"");
+            }
+            return result;
+        }catch (Exception ex){
+            logger.fatal("WriterController-deleteDocumentById Exception: ",ex);
+            return new ResponseModel.Builder<Boolean>(false)
+                    .message("Error Happened").build();
         }
-        return result;
     }
 
     @PostMapping("/deleteDocument")
     ResponseModel<Boolean> deleteDocument(@RequestParam String dataBase,@RequestParam String type,@RequestBody String filter){
-        var result= writerService.deleteDocument(dataBase, type, filter);
-        if (result.isSuccess()){
-            NodesManger.updateNode(MessageFormat.format("/Writer/deleteDocument?dataBase={0}&type={1}", dataBase,type),filter);
+        try{
+            if(!Helper.isValidJSON(filter)){
+                return new ResponseModel.Builder<Boolean>(false).message("Not Valid filter Json").build();
+            }
+
+            var result= writerService.deleteDocument(dataBase, type, filter);
+            if (result.isSuccess()){
+                NodesManger.updateNode(MessageFormat.format("/Writer/deleteDocument?dataBase={0}&type={1}", dataBase,type),filter);
+            }
+            return result;
+        }catch (Exception ex){
+            logger.fatal("WriterController-deleteDocument Exception: ",ex);
+            return new ResponseModel.Builder<Boolean>(false)
+                    .message("Error Happened").build();
         }
-        return result;
+
     }
 
     @PostMapping("/updateDocumentById")
     ResponseModel<Boolean> updateDocumentById(@RequestParam String dataBase,@RequestParam String type,@RequestParam int id,@RequestBody String newDocument){
-        if(!Helper.isValidJSON(newDocument)){
-            return new ResponseModel.Builder<Boolean>(false).message("Not Valid Json").build();
-        }
+        try{
+            if(!Helper.isValidJSON(newDocument)){
+                return new ResponseModel.Builder<Boolean>(false).message("Not Valid Json").build();
+            }
 
-        var result= writerService.updateDocumentById(dataBase, type, id, newDocument);
-        if (result.isSuccess()){
-            NodesManger.updateNode(MessageFormat.format("/Writer/updateDocumentById?dataBase={0}&type={1}&id={2}", dataBase,type,id),newDocument);
+            var result= writerService.updateDocumentById(dataBase, type, id, newDocument);
+            if (result.isSuccess()){
+                NodesManger.updateNode(MessageFormat.format("/Writer/updateDocumentById?dataBase={0}&type={1}&id={2}", dataBase,type,id),newDocument);
+            }
+            return result;
+        }catch (Exception ex){
+            logger.fatal("WriterController-updateDocumentById Exception: ",ex);
+            return new ResponseModel.Builder<Boolean>(false)
+                    .message("Error Happened").build();
         }
-        return result;
     }
 
     @PostMapping("/updateDocument")
@@ -81,7 +112,12 @@ public class WriterController {
 
             return result;
         }catch (JSONException ex){
-            return new ResponseModel.Builder<Boolean>(false).message("Not Valid Json").build();
+            return new ResponseModel.Builder<Boolean>(false)
+                    .message("Not Valid Json").build();
+        }catch (Exception ex){
+            logger.fatal("WriterController-updateDocument Exception: ",ex);
+            return new ResponseModel.Builder<Boolean>(false)
+                    .message("Error Happened").build();
         }
     }
 }

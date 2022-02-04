@@ -2,17 +2,17 @@ package com.example.controllernode;
 
 import com.example.controllernode.Services.Helper.IdGenerator;
 import com.example.controllernode.Services.IServices.IUserService;
-import com.example.controllernode.Services.Services.UserService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 
+import java.io.IOException;
+
 @SpringBootApplication
 public class ControllerNodeApplication {
 
     final IUserService userService;
-
     public ControllerNodeApplication(IUserService userService) {
         this.userService = userService;
     }
@@ -22,7 +22,7 @@ public class ControllerNodeApplication {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    public void doSomethingAfterStartup()  {
+    public void doSomethingAfterStartup() throws IOException {
         userService.addFirstUser();
         IdGenerator.getOldIds();
 

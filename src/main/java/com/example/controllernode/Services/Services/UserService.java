@@ -19,36 +19,31 @@ public class UserService implements IUserService {
     String Users_Base_Path;
 
     @Override
-    public synchronized ResponseModel<Boolean> addUser(User user) {
+    public synchronized ResponseModel<Boolean> addUser(User user) throws IOException {
         return Add(user.getUsername(), user.toString());
 
     }
 
     @Override
-    public synchronized ResponseModel<Boolean> addFirstUser() {
+    public synchronized ResponseModel<Boolean> addFirstUser() throws IOException {
         return Add("Admin", "{\"username\":\"Admin\",\"password\":\"123\",\"role\":\"administrator\",\"isDefault\":true}");
-
     }
 
-    private ResponseModel<Boolean> Add(String username, String user ) {
-        try{
-            createUsersDir();
+    private ResponseModel<Boolean> Add(String username, String user ) throws IOException {
+        createUsersDir();
 
-            var filePath= Path.of(MessageFormat.format("{0}/{1}.json",Users_Base_Path, username));
-            if(!Files.exists(filePath)){
-                Files.writeString(filePath, user);
+        var filePath= Path.of(MessageFormat.format("{0}/{1}.json",Users_Base_Path, username));
+        if(!Files.exists(filePath)){
+            Files.writeString(filePath, user);
 
-                return new ResponseModel.Builder<Boolean>(true).Result(true).build();
-            }else {
-                return new ResponseModel.Builder<Boolean>(false).message("The UserName already exist").build();
-            }
-        } catch (IOException ex){
-            return new ResponseModel.Builder<Boolean>(false).message("error happened").build();
+            return new ResponseModel.Builder<Boolean>(true).Result(true).build();
+        }else {
+            return new ResponseModel.Builder<Boolean>(false).message("The UserName already exist").build();
         }
     }
 
     @Override
-    public synchronized ResponseModel<User> validateUser(String username, String password){
+    public synchronized ResponseModel<User> validateUser(String username, String password) throws IOException {
         try {
             var filePath=Path.of(MessageFormat.format("{0}/{1}.json",Users_Base_Path, username));
             String Result = Files.readString(filePath);
@@ -62,29 +57,23 @@ public class UserService implements IUserService {
             return new ResponseModel.Builder<User>(false).message("Wrong password").build();
         } catch (NoSuchFileException ex){
             return new ResponseModel.Builder<User>(false).message("Wrong username").build();
-        }catch (Exception ex){
-            return new ResponseModel.Builder<User>(false).message("error happened").build();
         }
     }
 
     @Override
-    public synchronized ResponseModel<Boolean> updatePassword(String password,String username) {
-        try {
-            var filePath=Path.of(MessageFormat.format("{0}/{1}.json", Users_Base_Path,username));
-            String Result =Files.readString(filePath);
+    public synchronized ResponseModel<Boolean> updatePassword(String password,String username) throws IOException {
+        var filePath=Path.of(MessageFormat.format("{0}/{1}.json", Users_Base_Path,username));
+        String Result =Files.readString(filePath);
 
-            var user=new JSONObject(Result);
-            user.put("password", password);
-            if(user.has("isDefault")){
-                user.put("isDefault",false);
-            }
-
-            Files.writeString(filePath,user.toString());
-
-            return new ResponseModel.Builder<Boolean>(true).Result(true).build();
-        }catch (Exception ex){
-            return new ResponseModel.Builder<Boolean>(false).message("error happened").build();
+        var user=new JSONObject(Result);
+        user.put("password", password);
+        if(user.has("isDefault")){
+            user.put("isDefault",false);
         }
+
+        Files.writeString(filePath,user.toString());
+
+        return new ResponseModel.Builder<Boolean>(true).Result(true).build();
     }
 
     private void createUsersDir() throws IOException {

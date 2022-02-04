@@ -9,6 +9,7 @@ import com.example.controllernode.Services.Helper.FileManger;
 import com.example.controllernode.Services.Helper.IdGenerator;
 import com.example.controllernode.Services.IServices.ISchemaService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -36,59 +37,47 @@ public class SchemaService implements ISchemaService {
     }
 
     @Override
-    public synchronized ResponseModel<Boolean> createDatabase(String dataBase){
-        try{
-            var folderPath=Path.of(MessageFormat.format("{0}/{1}", Data_Base_Path,dataBase));
+    public synchronized ResponseModel<Boolean> createDatabase(String dataBase) throws IOException {
+        var folderPath=Path.of(MessageFormat.format("{0}/{1}", Data_Base_Path,dataBase));
 
-            if(Files.exists(folderPath)){
-                return new ResponseModel.Builder<Boolean>(false).message("Its already created").build();
-            } else {
-                Files.createDirectories(folderPath);
-                return new ResponseModel.Builder<Boolean>(true).Result(true).build();
-            }
-        } catch (Exception e) {
-            return new ResponseModel.Builder<Boolean>(false).message("error happened").build();
+        if(Files.exists(folderPath)){
+            return new ResponseModel.Builder<Boolean>(false).message("Its already created").build();
+        } else {
+            Files.createDirectories(folderPath);
+            return new ResponseModel.Builder<Boolean>(true).Result(true).build();
         }
     }
     @Override
-    public synchronized ResponseModel<Boolean> createType(String dataBase, String type){
-        try{
-            var folderPath=Path.of(MessageFormat.format("{0}/{1}/{2}", Data_Base_Path,dataBase,type));
+    public synchronized ResponseModel<Boolean> createType(String dataBase, String type) throws IOException {
+        var folderPath=Path.of(MessageFormat.format("{0}/{1}/{2}", Data_Base_Path,dataBase,type));
 
-            if(Files.exists(folderPath)){
-                return new ResponseModel.Builder<Boolean>(false).message("Its already created").build();
-            } else {
-                IdGenerator.addNewType(MessageFormat.format("{0}/{1}", dataBase,type));
+        if(Files.exists(folderPath)){
+            return new ResponseModel.Builder<Boolean>(false).message("Its already created").build();
+        } else {
+            IdGenerator.addNewType(MessageFormat.format("{0}/{1}", dataBase,type));
 
-                Files.createDirectory(folderPath);
-                return new ResponseModel.Builder<Boolean>(true).Result(true).build();
-            }
-        } catch (Exception e) {
-            return new ResponseModel.Builder<Boolean>(false).message("error happened").build();
+            Files.createDirectory(folderPath);
+            return new ResponseModel.Builder<Boolean>(true).Result(true).build();
         }
     }
     @Override
-    public synchronized ResponseModel<Boolean> createIndex(String dataBase, String type, String property) {
-        try{
-            var folderPath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
-            if(Files.exists(Path.of(folderPath))){
-                var indexFolder=Path.of(MessageFormat.format("{0}/index", folderPath));
-                if(!Files.exists(indexFolder)){
-                    Files.createDirectory(indexFolder);
-                }
-
-                indexRepository.setIndexValues(folderPath, property);
-                return new ResponseModel.Builder<Boolean>(true).Result(true).build();
-            } else {
-                return new ResponseModel.Builder<Boolean>(false).message(MessageFormat.format("{0}/{1} Not Exist", dataBase,type)).build();
+    public synchronized ResponseModel<Boolean> createIndex(String dataBase, String type, String property) throws IOException {
+        var folderPath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
+        if(Files.exists(Path.of(folderPath))){
+            var indexFolder=Path.of(MessageFormat.format("{0}/index", folderPath));
+            if(!Files.exists(indexFolder)){
+                Files.createDirectory(indexFolder);
             }
-        } catch (Exception e) {
-            return new ResponseModel.Builder<Boolean>(false).message("error happened").build();
+
+            indexRepository.setIndexValues(folderPath, property);
+            return new ResponseModel.Builder<Boolean>(true).Result(true).build();
+        } else {
+            return new ResponseModel.Builder<Boolean>(false).message(MessageFormat.format("{0}/{1} Not Exist", dataBase,type)).build();
         }
     }
 
     @Override
-    public ResponseModel<Boolean> importSchema(DataBaseSchema schema) {
+    public ResponseModel<Boolean> importSchema(DataBaseSchema schema) throws IOException {
         var databaseName=schema.getName();
         var createResponse=createDatabase(databaseName);
 
@@ -110,30 +99,27 @@ public class SchemaService implements ISchemaService {
     }
 
     @Override
-    public ResponseModel<DataBaseSchema> exportSchema(String database) {
+    public ResponseModel<DataBaseSchema> exportSchema(String database) throws IOException {
         try{
             var folderPath=MessageFormat.format("{0}/{1}",Data_Base_Path, database);
 
             List<Type> types= new ArrayList<>();
-            Files.walk(Paths.get(folderPath),1).filter(Files::isDirectory).forEach(filePath -> {
-                try {
-                    if(!Files.isSameFile(Path.of(folderPath),filePath)){
-                        var typeName=filePath.getFileName().toString();
+            Files.walk(Paths.get(folderPath),1).filter(Files::isDirectory)
+                    .forEach(filePath -> {
+                        try {
+                            if(!Files.isSameFile(Path.of(folderPath),filePath)){
+                                var typeName=filePath.getFileName().toString();
 
-                        types.add(new Type(typeName,getIndexes(folderPath,typeName)));
-                    }
-                } catch (IOException e) {
-                }
-
+                                types.add(new Type(typeName,getIndexes(folderPath,typeName)));
+                            }
+                        } catch (IOException e) {
+                        }
             });
 
             DataBaseSchema schema=new DataBaseSchema(database,types);
             return new ResponseModel.Builder<DataBaseSchema>(true).Result(schema).build();
         } catch (NoSuchFileException ex){
             return new ResponseModel.Builder<DataBaseSchema>(false).message("database not found").build();
-        }
-        catch (Exception ex){
-            return new ResponseModel.Builder<DataBaseSchema>(false).message("error happened").build();
         }
     }
 
@@ -154,7 +140,7 @@ public class SchemaService implements ISchemaService {
         return Files.exists(Path.of(folderPath));
     }
 
-    public void createNewNode(String url){
+    public void createNewNode(String url) throws IOException, UnirestException {
         Map<String,String> database = new HashMap<>();
         try(Stream<Path> paths = Files.walk(Paths.get(Data_Base_Path))) {
 
@@ -174,9 +160,6 @@ public class SchemaService implements ISchemaService {
 
             ObjectMapper Obj = new ObjectMapper();
             ApiCall.post(MessageFormat.format("{0}/Schema/initDatabase",url),Obj.writeValueAsString(database));
-        }
-        catch (Exception ex){
-            return ;
         }
     }
 }

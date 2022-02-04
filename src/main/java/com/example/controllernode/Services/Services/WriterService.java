@@ -29,8 +29,7 @@ public class WriterService implements IWriterService {
     }
 
     @Override
-    public synchronized ResponseModel<String> addDocument(String dataBase, String type, String document){
-        try{
+    public synchronized ResponseModel<String> addDocument(String dataBase, String type, String document) throws IOException {
             List<String> oldVersionPath= new ArrayList<>();
             var filePath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
 
@@ -46,13 +45,10 @@ public class WriterService implements IWriterService {
             } else {
                 return new ResponseModel.Builder<String>(false).message("Wrong dataBase or type").build();
             }
-        } catch (Exception e) {
-            return new ResponseModel.Builder<String>(false).message("error happened").build();
-        }
     }
 
     @Override
-    public synchronized ResponseModel<Boolean> deleteDocumentById(String dataBase, String type,int id) {
+    public synchronized ResponseModel<Boolean> deleteDocumentById(String dataBase, String type,int id) throws IOException {
         try{
             var folderPath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
             var filePath=Path.of(MessageFormat.format("{0}/{1}.json",folderPath ,id));
@@ -73,12 +69,9 @@ public class WriterService implements IWriterService {
         }catch (NoSuchFileException ex){
             return new ResponseModel.Builder<Boolean>(false).message("Wrong Id").build();
         }
-        catch (Exception ex){
-            return new ResponseModel.Builder<Boolean>(false).message("error happened").build();
-        }
     }
     @Override
-    public synchronized ResponseModel<Boolean> deleteDocument(String dataBase, String type,String filter) {
+    public synchronized ResponseModel<Boolean> deleteDocument(String dataBase, String type,String filter) throws IOException {
         try {
             var filterNode = new JSONObject(filter);
             if(filterNode.has("_id")){
@@ -91,12 +84,9 @@ public class WriterService implements IWriterService {
         }catch (NoSuchFileException ex){
             return new ResponseModel.Builder<Boolean>(false).message("Wrong database or type").build();
         }
-        catch (Exception ex){
-            return new ResponseModel.Builder<Boolean>(false).message("error happened").build();
-        }
     }
 
-    private ResponseModel<Boolean> tryDeleteById(String dataBase, String type, int id){
+    private ResponseModel<Boolean> tryDeleteById(String dataBase, String type, int id) throws IOException {
         var result=deleteDocumentById(dataBase,type, id);
         return new ResponseModel.Builder<Boolean>(result.isSuccess()).Result(result.getResult()).message(result.getMessage()).build();
     }
@@ -143,7 +133,7 @@ public class WriterService implements IWriterService {
     }
 
     @Override
-    public synchronized ResponseModel<Boolean> updateDocumentById(String dataBase, String type,int id,String newDocument) {
+    public synchronized ResponseModel<Boolean> updateDocumentById(String dataBase, String type,int id,String newDocument) throws IOException {
         try{
             List<String> oldVersionPath= new ArrayList<>();
             var folderPath=MessageFormat.format("{0}/{1}/{2}", Data_Base_Path, dataBase,type);
@@ -160,12 +150,9 @@ public class WriterService implements IWriterService {
         }  catch (NoSuchFileException ex){
             return new ResponseModel.Builder<Boolean>(false).message("Wrong database or type").build();
         }
-        catch (Exception ex){
-            return new ResponseModel.Builder<Boolean>(false).message("error happened").build();
-        }
     }
     @Override
-    public synchronized ResponseModel<Boolean> updateDocument(String dataBase, String type,String filter,String newDocument) {
+    public synchronized ResponseModel<Boolean> updateDocument(String dataBase, String type,String filter,String newDocument) throws IOException {
 
         try{
             var filterNode = new JSONObject(filter);
@@ -179,12 +166,9 @@ public class WriterService implements IWriterService {
         }catch (NoSuchFileException ex){
             return new ResponseModel.Builder<Boolean>(false).message("Wrong database or type").build();
         }
-        catch (Exception ex){
-            return new ResponseModel.Builder<Boolean>(false).message("error happened").build();
-        }
     }
 
-    private ResponseModel<Boolean> tryUpdateById(String dataBase, String type, int id,String newDocument){
+    private ResponseModel<Boolean> tryUpdateById(String dataBase, String type, int id,String newDocument) throws IOException {
         var result=updateDocumentById(dataBase,type, id,newDocument);
         return new ResponseModel.Builder<Boolean>(result.isSuccess()).Result(result.getResult()).message(result.getMessage()).build();
     }
