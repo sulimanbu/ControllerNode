@@ -1,5 +1,8 @@
 package com.example.controllernode.Services.Helper;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -7,6 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 public class IdGenerator {
+    private static final Logger logger = LogManager.getLogger(IdGenerator.class);
+    static String Data_Base_Path="NoSqlDB/DB";
 
     private IdGenerator(){
         throw new AssertionError();
@@ -32,10 +37,10 @@ public class IdGenerator {
         }
     }
     public static void getOldIds(){
-        try(Stream<Path> paths = Files.walk(Paths.get("NoSqlDB/DB"),1).filter(Files::isDirectory)) {
+        try(Stream<Path> paths = Files.walk(Paths.get(Data_Base_Path),1).filter(Files::isDirectory)) {
 
             for(var databasePath: paths.toList()){
-                if(!Files.isSameFile(databasePath,Path.of("NoSqlDB/DB"))){
+                if(!Files.isSameFile(databasePath,Path.of(Data_Base_Path))){
                     for (var typePath:Files.walk(databasePath,1).filter(Files::isDirectory).toList()){
                         if(!Files.isSameFile(typePath,databasePath)){
                             final int[] max = {0};
@@ -53,6 +58,7 @@ public class IdGenerator {
 
         }
         catch (Exception ex){
+            logger.fatal("IdGenerator-getOldIds Exception: ",ex);
         }
     }
 }
