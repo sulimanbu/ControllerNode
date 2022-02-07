@@ -23,6 +23,39 @@ public class IndexRepository implements IIndexRepository {
         Stream<Path> paths = Files.walk(Paths.get(folderPath),1).filter(Files::isRegularFile);
 
         Map<String, ArrayList<Integer>> index=new HashMap<>();
+        if(property.contains(",")){
+            setMultiIndexValues(paths,property.split(","),index);
+        }else {
+            setSingleIndexValues(paths,property,index);
+        }
+        String json = new ObjectMapper().writeValueAsString(index);
+
+        FileManger.writeFile(folderPath+"/index/"+ property+ ".json",json);
+        FileManger.removeFromOldVersion(new ArrayList<>(Collections.singleton(folderPath + "/index/" + property + ".json")));
+    }
+    private void setMultiIndexValues(Stream<Path> paths, String[] indexPropertiesArray,Map<String, ArrayList<Integer>> index) throws IOException {
+        for(var path: paths.toList()) {
+            var fileContent = new JSONObject(Files.readString(path));
+            StringBuilder indexValue= new StringBuilder();
+            for (var item:indexPropertiesArray) {
+                if (fileContent.has(item)) {
+                    if(!indexValue.toString().equals(""))
+                        indexValue.append(",");
+                    indexValue.append(fileContent.get(item));
+                }else {
+                    indexValue = new StringBuilder();
+                    break;
+                }
+            }
+
+            if (!indexValue.toString().equals("")) {
+                var list = index.getOrDefault(indexValue.toString(), new ArrayList<>());
+                list.add((Integer) fileContent.get("_id"));
+                index.put(indexValue.toString(), list);
+            }
+        }
+    }
+    private void setSingleIndexValues(Stream<Path> paths, String property,Map<String, ArrayList<Integer>> index) throws IOException {
         for(var path: paths.toList()) {
             var fileContent = new JSONObject(Files.readString(path));
 
@@ -32,10 +65,6 @@ public class IndexRepository implements IIndexRepository {
                 index.put(fileContent.get(property).toString(), list);
             }
         }
-        String json = new ObjectMapper().writeValueAsString(index);
-
-        FileManger.writeFile(folderPath+"/index/"+ property+ ".json",json);
-        FileManger.removeFromOldVersion(new ArrayList<>(Collections.singleton(folderPath + "/index/" + property + ".json")));
     }
 
     @Override
@@ -45,26 +74,55 @@ public class IndexRepository implements IIndexRepository {
         if(Files.exists(Path.of(folderPath + "/index"))){
             var documentContent = new JSONObject(Document);
 
-            var keys=documentContent.keys();
-            while(keys.hasNext()){
-                var property=keys.next();
-                var filePath=Path.of(folderPath + "/index/" + property + ".json" );
-                if(Files.exists(filePath)){
-                    var fileContent=new JSONObject(Files.readString(filePath));
-                    List<Object> array=new ArrayList<>();
-                    if(fileContent.has(documentContent.get(property).toString())){
-                        array=((JSONArray)fileContent.get(documentContent.get(property).toString())).toList();
-                    }
+            Stream<Path> paths = Files.walk(Path.of(folderPath + "/index"),1).filter(Files::isRegularFile);
+            for(var path: paths.toList()) {
+                var propertyName=path.getFileName().toString().replace(".json","");
 
-                    array.add( documentContent.get("_id"));
-                    fileContent.put(documentContent.get(property).toString(),array);
-
-                    oldVersionPaths.add(filePath.toString());
-                    FileManger.writeFile(filePath.toString(),fileContent.toString());
+                if(propertyName.contains(",")){
+                    addToMultiIndex(path,documentContent,propertyName.split(","),oldVersionPaths);
+                }else {
+                    addToSingleIndex(path,documentContent,propertyName,oldVersionPaths);
                 }
             }
         }
         return oldVersionPaths;
+    }
+    private void addToMultiIndex(Path path,JSONObject documentContent,String[] propertiesName,List<String> oldVersionPaths) throws IOException {
+        StringBuilder indexValue= new StringBuilder();
+        for (var item:propertiesName) {
+            if (documentContent.has(item)) {
+                if(!indexValue.toString().equals(""))
+                    indexValue.append(",");
+                indexValue.append(documentContent.get(item));
+            }else {
+                indexValue = new StringBuilder();
+                break;
+            }
+        }
+
+        if(!indexValue.toString().equals("")){
+            addIndex(path,documentContent,indexValue.toString(),oldVersionPaths);
+        }
+    }
+    private void addToSingleIndex(Path path,JSONObject documentContent,String propertyName,List<String> oldVersionPaths) throws IOException {
+        if(documentContent.has(propertyName)){
+            var propertyValue= documentContent.get(propertyName).toString();
+            addIndex(path,documentContent,propertyValue,oldVersionPaths);
+        }
+    }
+    private void addIndex(Path path,JSONObject documentContent,String propertyValue,List<String> oldVersionPaths) throws IOException {
+        var fileContent = new JSONObject(Files.readString(path));
+        List<Object> array= new ArrayList<>();
+
+        if(fileContent.has(propertyValue)){
+            array=((JSONArray)fileContent.get(propertyValue)).toList();
+        }
+
+        array.add( documentContent.get("_id"));
+        fileContent.put(propertyValue,array);
+
+        oldVersionPaths.add(path.toString());
+        FileManger.writeFile(path.toString(),fileContent.toString());
     }
 
     @Override
@@ -73,76 +131,142 @@ public class IndexRepository implements IIndexRepository {
 
         if(Files.exists(Path.of(folderPath + "/index"))){
             var documentContent = new JSONObject(Document);
-            var keys=documentContent.keys();
-            while(keys.hasNext()){
-                var property=keys.next();
-                var filePath=Path.of(folderPath + "/index/" + property + ".json" );
-                if(Files.exists(filePath)){
-                    var fileContent=new JSONObject(Files.readString(filePath));
-                    if(fileContent.has(documentContent.get(property).toString())){
-                        var array=(JSONArray)fileContent.get(documentContent.get(property).toString());
-                        var array1=array.toList();
-                        array1.remove(documentContent.get("_id"));
-                        if(array1.isEmpty()){
-                            fileContent.remove(documentContent.get(property).toString());
-                        }else {
-                            fileContent.put(documentContent.get(property).toString(),array1);
-                        }
 
-                        oldVersionPaths.add(filePath.toString());
-                        FileManger.writeFile(filePath.toString(),fileContent.toString());
-                    }
+            Stream<Path> paths = Files.walk(Path.of(folderPath + "/index"),1).filter(Files::isRegularFile);
+            for(var path: paths.toList()) {
+                var propertyName=path.getFileName().toString().replace(".json","");
+
+                if(propertyName.contains(",")){
+                    deleteFromMultiIndex(path,documentContent,propertyName.split(","),oldVersionPaths);
+                }else {
+                    deleteFromSingleIndex(path,documentContent,propertyName,oldVersionPaths);
                 }
             }
         }
         return oldVersionPaths;
+    }
+    private void deleteFromMultiIndex(Path path,JSONObject documentContent,String[] propertiesName,List<String> oldVersionPaths) throws IOException {
+        StringBuilder indexValue= new StringBuilder();
+        for (var item:propertiesName) {
+            if (documentContent.has(item)) {
+                if(!indexValue.toString().equals(""))
+                    indexValue.append(",");
+                indexValue.append(documentContent.get(item));
+            }else {
+                indexValue = new StringBuilder();
+                break;
+            }
+        }
+
+        if(!indexValue.toString().equals("")){
+            deleteIndex(path,documentContent,indexValue.toString(),oldVersionPaths);
+        }
+    }
+    private void deleteFromSingleIndex(Path path,JSONObject documentContent,String propertyName,List<String> oldVersionPaths) throws IOException {
+        if(documentContent.has(propertyName)){
+            var propertyValue= documentContent.get(propertyName).toString();
+            deleteIndex(path,documentContent,propertyValue,oldVersionPaths);
+        }
+    }
+    private void deleteIndex(Path path,JSONObject documentContent,String propertyValue,List<String> oldVersionPaths) throws IOException {
+        var fileContent = new JSONObject(Files.readString(path));
+        var array=(JSONArray)fileContent.get(propertyValue);
+        var array1=array.toList();
+        array1.remove(documentContent.get("_id"));
+        if(array1.isEmpty()){
+            fileContent.remove(propertyValue);
+        }else {
+            fileContent.put(propertyValue,array1);
+        }
+
+        oldVersionPaths.add(path.toString());
+        FileManger.writeFile(path.toString(),fileContent.toString());
     }
 
     @Override
     public ResponseModel<List<Object>> tryGetUsingIndex(String folderPath, String filter) throws IOException {
         if(Files.exists(Path.of(folderPath + "/index"))){
             var filterContent = new JSONObject(filter);
-
             boolean isMatch=false;
-            boolean isIndexJust = true;
 
+            Set<String> propertyUsed=new HashSet<>();
             List<Object> list=new ArrayList<>();
-            var keys=filterContent.keys();
-            while(keys.hasNext()){
+            Stream<Path> paths = Files.walk(Path.of(folderPath + "/index"),1).filter(Files::isRegularFile);
+            for (var path:paths.toList()) {
+                var propertyName=path.getFileName().toString().replace(".json","");
                 List<Object> array=new ArrayList<>();
-                var property=keys.next();
-                var filePath=Path.of(folderPath + "/index/" + property + ".json" );
-                if(Files.exists(filePath)){
-                    var fileContent=new JSONObject(FileManger.readFile(filePath.toString()));
 
-                    var propertyValue=filterContent.get(property).toString();
-                    if(fileContent.has(propertyValue)){
-                        array.addAll(((JSONArray)fileContent.get(propertyValue)).toList());
+                if(propertyName.contains(",")){
+                    String[] propertiesName=propertyName.split(",");
 
-                        if(!isMatch){
-                            list.addAll(array);
+                    StringBuilder indexValue= new StringBuilder();
+                    for (var item:propertiesName) {
+                        if (filterContent.has(item)) {
+                            if(!indexValue.toString().equals(""))
+                                indexValue.append(",");
+                            indexValue.append(filterContent.get(item));
                         }else {
-                            list = list.stream().filter(array::contains).toList();
+                            indexValue = new StringBuilder();
+                            break;
                         }
+                    }
 
-                        isMatch=true;
-                    }else {
-                        return new ResponseModel.Builder<List<Object>>(true).Result(new ArrayList<>()).build();
+                    if(!indexValue.toString().equals("")){
+                        propertyUsed.addAll(Arrays.stream(propertiesName).toList());
+                        var fileContent=new JSONObject(FileManger.readFile(path.toString()));
+
+                        if(fileContent.has(indexValue.toString())){
+                            array.addAll(((JSONArray)fileContent.get(indexValue.toString())).toList());
+
+                            if(!isMatch){
+                                list.addAll(array);
+                            }else {
+                                list = list.stream().filter(array::contains).toList();
+                            }
+
+                            isMatch=true;
+                        }else {
+                            return new ResponseModel.Builder<List<Object>>(true).Result(new ArrayList<>()).build();
+                        }
                     }
                 }else {
-                    isIndexJust = false;
+                    if(filterContent.has(propertyName)){
+                        propertyUsed.add(propertyName);
+                        var fileContent=new JSONObject(FileManger.readFile(path.toString()));
+                        var propertyValue= filterContent.get(propertyName).toString();
+
+                        if(fileContent.has(propertyValue)){
+                            array.addAll(((JSONArray)fileContent.get(propertyValue)).toList());
+
+                            if(!isMatch){
+                                list.addAll(array);
+                            }else {
+                                list = list.stream().filter(array::contains).toList();
+                            }
+
+                            isMatch=true;
+                        }else {
+                            return new ResponseModel.Builder<List<Object>>(true).Result(new ArrayList<>()).build();
+                        }
+                    }
                 }
             }
 
             if(isMatch){
-                if(isIndexJust){
-                    return new ResponseModel.Builder<List<Object>>(true).Result(list).build();
-                }else {
-                    return new ResponseModel.Builder<List<Object>>(false).Result(list).build();
-                }
+                return new ResponseModel.Builder<List<Object>>(isIndexJust(propertyUsed,filterContent)).Result(list).build();
             }
-
         }
         return new ResponseModel.Builder<List<Object>>(false).build();
+    }
+
+    private boolean isIndexJust(Set<String> propertyUsed,JSONObject filterContent){
+        var keys=filterContent.keys();
+        while(keys.hasNext()){
+            var property=keys.next();
+            if(!propertyUsed.contains(property)){
+                return false;
+            }
+        }
+        return true;
     }
 }
