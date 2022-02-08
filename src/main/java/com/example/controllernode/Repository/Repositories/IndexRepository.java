@@ -36,22 +36,12 @@ public class IndexRepository implements IIndexRepository {
     private void setMultiIndexValues(Stream<Path> paths, String[] indexPropertiesArray,Map<String, ArrayList<Integer>> index) throws IOException {
         for(var path: paths.toList()) {
             var fileContent = new JSONObject(Files.readString(path));
-            StringBuilder indexValue= new StringBuilder();
-            for (var item:indexPropertiesArray) {
-                if (fileContent.has(item)) {
-                    if(!indexValue.toString().equals(""))
-                        indexValue.append(",");
-                    indexValue.append(fileContent.get(item));
-                }else {
-                    indexValue = new StringBuilder();
-                    break;
-                }
-            }
+            String indexValue = getIndexValue(fileContent, indexPropertiesArray);
 
-            if (!indexValue.toString().equals("")) {
-                var list = index.getOrDefault(indexValue.toString(), new ArrayList<>());
+            if (!indexValue.equals("")) {
+                var list = index.getOrDefault(indexValue, new ArrayList<>());
                 list.add((Integer) fileContent.get("_id"));
-                index.put(indexValue.toString(), list);
+                index.put(indexValue, list);
             }
         }
     }
@@ -88,20 +78,10 @@ public class IndexRepository implements IIndexRepository {
         return oldVersionPaths;
     }
     private void addToMultiIndex(Path path,JSONObject documentContent,String[] propertiesName,List<String> oldVersionPaths) throws IOException {
-        StringBuilder indexValue= new StringBuilder();
-        for (var item:propertiesName) {
-            if (documentContent.has(item)) {
-                if(!indexValue.toString().equals(""))
-                    indexValue.append(",");
-                indexValue.append(documentContent.get(item));
-            }else {
-                indexValue = new StringBuilder();
-                break;
-            }
-        }
+        String indexValue = getIndexValue(documentContent, propertiesName);
 
-        if(!indexValue.toString().equals("")){
-            addIndex(path,documentContent,indexValue.toString(),oldVersionPaths);
+        if(!indexValue.equals("")){
+            addIndex(path,documentContent,indexValue,oldVersionPaths);
         }
     }
     private void addToSingleIndex(Path path,JSONObject documentContent,String propertyName,List<String> oldVersionPaths) throws IOException {
@@ -146,20 +126,10 @@ public class IndexRepository implements IIndexRepository {
         return oldVersionPaths;
     }
     private void deleteFromMultiIndex(Path path,JSONObject documentContent,String[] propertiesName,List<String> oldVersionPaths) throws IOException {
-        StringBuilder indexValue= new StringBuilder();
-        for (var item:propertiesName) {
-            if (documentContent.has(item)) {
-                if(!indexValue.toString().equals(""))
-                    indexValue.append(",");
-                indexValue.append(documentContent.get(item));
-            }else {
-                indexValue = new StringBuilder();
-                break;
-            }
-        }
+        String indexValue= getIndexValue(documentContent, propertiesName);
 
-        if(!indexValue.toString().equals("")){
-            deleteIndex(path,documentContent,indexValue.toString(),oldVersionPaths);
+        if(!indexValue.equals("")){
+            deleteIndex(path,documentContent,indexValue,oldVersionPaths);
         }
     }
     private void deleteFromSingleIndex(Path path,JSONObject documentContent,String propertyName,List<String> oldVersionPaths) throws IOException {
@@ -187,78 +157,74 @@ public class IndexRepository implements IIndexRepository {
     public ResponseModel<List<Object>> tryGetUsingIndex(String folderPath, String filter) throws IOException {
         if(Files.exists(Path.of(folderPath + "/index"))){
             var filterContent = new JSONObject(filter);
-            boolean isMatch=false;
+            boolean isMatchIndex=false;
 
-            Set<String> propertyUsed=new HashSet<>();
-            List<Object> list=new ArrayList<>();
+            Set<String> propertyUsed = new HashSet<>();
+            List<Object> IdsList = new ArrayList<>();
             Stream<Path> paths = Files.walk(Path.of(folderPath + "/index"),1).filter(Files::isRegularFile);
             for (var path:paths.toList()) {
                 var propertyName=path.getFileName().toString().replace(".json","");
-                List<Object> array=new ArrayList<>();
 
                 if(propertyName.contains(",")){
                     String[] propertiesName=propertyName.split(",");
+                    String indexValue= getIndexValue(filterContent, propertiesName);
 
-                    StringBuilder indexValue= new StringBuilder();
-                    for (var item:propertiesName) {
-                        if (filterContent.has(item)) {
-                            if(!indexValue.toString().equals(""))
-                                indexValue.append(",");
-                            indexValue.append(filterContent.get(item));
-                        }else {
-                            indexValue = new StringBuilder();
-                            break;
-                        }
-                    }
-
-                    if(!indexValue.toString().equals("")){
+                    if(!indexValue.equals("")){
                         propertyUsed.addAll(Arrays.stream(propertiesName).toList());
-                        var fileContent=new JSONObject(FileManger.readFile(path.toString()));
-
-                        if(fileContent.has(indexValue.toString())){
-                            array.addAll(((JSONArray)fileContent.get(indexValue.toString())).toList());
-
-                            if(!isMatch){
-                                list.addAll(array);
-                            }else {
-                                list = list.stream().filter(array::contains).toList();
-                            }
-
-                            isMatch=true;
-                        }else {
-                            return new ResponseModel.Builder<List<Object>>(true).Result(new ArrayList<>()).build();
-                        }
+                        addIdsToList(path,indexValue,isMatchIndex,IdsList);
+                        isMatchIndex = true;
                     }
                 }else {
                     if(filterContent.has(propertyName)){
                         propertyUsed.add(propertyName);
-                        var fileContent=new JSONObject(FileManger.readFile(path.toString()));
                         var propertyValue= filterContent.get(propertyName).toString();
 
-                        if(fileContent.has(propertyValue)){
-                            array.addAll(((JSONArray)fileContent.get(propertyValue)).toList());
-
-                            if(!isMatch){
-                                list.addAll(array);
-                            }else {
-                                list = list.stream().filter(array::contains).toList();
-                            }
-
-                            isMatch=true;
-                        }else {
-                            return new ResponseModel.Builder<List<Object>>(true).Result(new ArrayList<>()).build();
-                        }
+                        addIdsToList(path,propertyValue,isMatchIndex,IdsList);
+                        isMatchIndex=true;
                     }
+                }
+
+                if(isMatchIndex && IdsList.isEmpty()){
+                    return new ResponseModel.Builder<List<Object>>(true).Result(new ArrayList<>()).build();
                 }
             }
 
-            if(isMatch){
-                return new ResponseModel.Builder<List<Object>>(isIndexJust(propertyUsed,filterContent)).Result(list).build();
+            if(isMatchIndex){
+                return new ResponseModel.Builder<List<Object>>(isIndexJust(propertyUsed,filterContent)).Result(IdsList).build();
             }
         }
         return new ResponseModel.Builder<List<Object>>(false).build();
     }
+    private void addIdsToList(Path path,String propertyValue,Boolean isMatchIndex,List<Object> IdsList) throws IOException {
+        var fileContent=new JSONObject(FileManger.readFile(path.toString()));
 
+        if(fileContent.has(propertyValue)){
+            List<Object> array = new ArrayList<>(((JSONArray) fileContent.get(propertyValue)).toList());
+
+            if(!isMatchIndex){
+                IdsList.addAll(array);
+            }else {
+                IdsList.removeIf(item -> !array.contains(item));
+            }
+        }else {
+            IdsList.clear();
+        }
+    }
+    private String getIndexValue(JSONObject filterContent, String[] propertiesName) {
+        StringBuilder indexValue= new StringBuilder();
+        for (var item:propertiesName) {
+            if (filterContent.has(item)) {
+                if(!indexValue.toString().equals(""))
+                    indexValue.append("(*&&*)");
+                indexValue.append(filterContent.get(item));
+            }else {
+                indexValue = new StringBuilder();
+                break;
+            }
+        }
+
+        return indexValue.toString();
+    }
     private boolean isIndexJust(Set<String> propertyUsed,JSONObject filterContent){
         var keys=filterContent.keys();
         while(keys.hasNext()){

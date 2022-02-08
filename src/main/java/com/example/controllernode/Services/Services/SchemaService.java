@@ -8,8 +8,11 @@ import com.example.controllernode.Repository.IRepositories.IIndexRepository;
 import com.example.controllernode.Services.Helper.FileManger;
 import com.example.controllernode.Services.Helper.IdGenerator;
 import com.example.controllernode.Services.IServices.ISchemaService;
+import com.example.controllernode.controllers.LogInController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +33,7 @@ public class SchemaService implements ISchemaService {
 
     @Value("${spring.application.Data_Base_Path}")
     String Data_Base_Path;
-
+    private static final Logger logger = LogManager.getLogger(SchemaService.class);
     IIndexRepository indexRepository;
     public SchemaService(IIndexRepository indexRepository){
         this.indexRepository=indexRepository;
@@ -49,9 +52,12 @@ public class SchemaService implements ISchemaService {
     }
     @Override
     public synchronized ResponseModel<Boolean> createType(String dataBase, String type) throws IOException {
+        var databasePath=Path.of(MessageFormat.format("{0}/{1}", Data_Base_Path,dataBase));
         var folderPath=Path.of(MessageFormat.format("{0}/{1}/{2}", Data_Base_Path,dataBase,type));
 
-        if(Files.exists(folderPath)){
+        if(!Files.exists(databasePath)){
+            return new ResponseModel.Builder<Boolean>(false).message("Database not found").build();
+        } else if(Files.exists(folderPath)){
             return new ResponseModel.Builder<Boolean>(false).message("Its already created").build();
         } else {
             IdGenerator.addNewType(MessageFormat.format("{0}/{1}", dataBase,type));
@@ -112,7 +118,8 @@ public class SchemaService implements ISchemaService {
 
                                 types.add(new Type(typeName,getIndexes(folderPath,typeName)));
                             }
-                        } catch (IOException e) {
+                        } catch (IOException ex) {
+                            logger.fatal("exportSchema :", ex);
                         }
             });
 
